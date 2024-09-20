@@ -5,8 +5,8 @@
         <VCol cols="12">
           <VCard color="black">
             <div class="pa-3">
-              <div>Bem vindo ao seu restaurante!</div>
-              <div class="font-bold text-1xl">Steik Tatuapé</div>
+              <div>Bem vindo!</div>
+              <div class="font-bold text-1xl">Steik SBS</div>
             </div>
           </VCard></VCol
         >
@@ -33,7 +33,7 @@
               color=""
               :value="
                 pedidos
-                  .filter((item) => item.status == 'Em Aberto')
+                  .filter((item) => item.status != 'Fechado')
                   .length.toString()
               "
               icon="mdi-silverware-fork-knife"
@@ -43,7 +43,7 @@
               :value="
                 'R$' +
                 pedidos
-                  .filter((item) => item.status == 'Em Aberto')
+                  .filter((item) => item.status != 'Fechado')
                   .map((item) => item.total_pratos)
                   .reduce(
                     (acumulador, valorAtual) => acumulador + valorAtual,
@@ -148,9 +148,12 @@
                         <VChip
                           variant="elevated"
                           :color="
-                            item.status == 'Em Aberto' ? 'warning' : 'green'
+                            item.status == 'Fechado' ? 'green' : 'warning'
                           "
-                          @click="changeStatus(item)"
+                          @click="
+                            dialog_status = true;
+                            pedido = item.id;
+                          "
                         >
                           {{ item.status }}
                         </VChip>
@@ -242,10 +245,57 @@
         </VCard>
       </VDialog>
     </vContainer>
+    <VDialog
+      v-model="dialog_status"
+      scrollable
+      persistent
+      :overlay="false"
+      max-width="700px"
+      transition="dialog-transition"
+    >
+      <VCard elevation="10" color="#14161b">
+        <VCard elevation="0" color="#14181B" class="ma-5">
+          <div class="d-flex my-5">
+            <div class="text-4xl ml-10">Mudar de status</div>
+            <div class="text-4xl ml-auto mr-10">
+              <VIcon
+                class="cursor-pointer"
+                @click="dialog_status = !dialog_status"
+                >mdi-close</VIcon
+              >
+            </div>
+          </div>
+        </VCard>
+        <VCard elevation="0" color="#14181B" class="ma-5 pa-5 overflow-y-auto">
+          <VRow>
+            <VCol>
+              <VBtn color="warning" @click="changeStatus('Em Aberto')"
+                >Em Aberto</VBtn
+              >
+            </VCol>
+            <VCol>
+              <VBtn color="info" @click="changeStatus('Preparando')"
+                >Preparando</VBtn
+              >
+            </VCol>
+            <VCol>
+              <VBtn color="error" @click="changeStatus('Pedido Pronto')"
+                >Pedido Pronto</VBtn
+              >
+            </VCol>
+            <VCol>
+              <VBtn color="success" @click="changeStatus('Fechado')"
+                >Fechado</VBtn
+              >
+            </VCol>
+          </VRow>
+        </VCard>
+      </VCard>
+    </VDialog>
   </NuxtLayout>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref } from "vue";
 
 const search_pedidos = ref("");
@@ -256,6 +306,25 @@ const form_pedido = ref({
   mesa: "",
   pratos_obj: [],
 });
+
+const pedido = ref(null);
+
+function changeStatus(status) {
+  $fetch(`http://18.220.42.255:8000/api/pedidos/${pedido.value}/`, {
+    method: "PATCH",
+    body: { status: status },
+  }).then((_) => {
+    $fetch("http://18.220.42.255:8000/api/pedidos/", {
+      method: "GET",
+    }).then((res) => {
+      pedidos.value = res;
+    });
+  });
+
+  dialog_status.value = false;
+}
+
+const dialog_status = ref(false);
 
 const dialog_fazer_pedido = ref(false);
 
@@ -296,21 +365,12 @@ function fecharDialog() {
   dialog_fazer_pedido.value = false;
 }
 
-function changeStatus(obj) {
-  pedidos.value.find((item) => item.id == obj.id).status =
-    pedidos.value.find((item) => item.id == obj.id).status == "Fechado"
-      ? "Em Aberto"
-      : "Fechado";
-}
-
 function fazerPedido() {
-  console.log(form_pedido.value);
-
-  $fetch("https://steik.ngrok.app/api/pedidos/", {
+  $fetch("http://18.220.42.255:8000/api/pedidos/", {
     method: "POST",
     body: form_pedido.value,
   }).then((res) => {
-    $fetch("https://steik.ngrok.app/api/pedidos/", {
+    $fetch("http://18.220.42.255:8000/api/pedidos/", {
       method: "GET",
     }).then((res) => {
       pedidos.value = res;
@@ -321,18 +381,27 @@ function fazerPedido() {
 }
 
 onBeforeMount(() => {
-  $fetch("https://steik.ngrok.app/api/pedidos/", {
+  $fetch("http://18.220.42.255:8000/api/pedidos/", {
     method: "GET",
   }).then((res) => {
     pedidos.value = res;
-    console.log(res);
   });
 
-  $fetch("https://steik.ngrok.app/api/mesas/", {
+  $fetch("http://18.220.42.255:8000/api/mesas/", {
     method: "GET",
   }).then((res) => {
     mesas.value = res;
   });
+});
+
+onMounted(() => {
+  setInterval(() => {
+    $fetch("http://18.220.42.255:8000/api/pedidos/", {
+      method: "GET",
+    }).then((res) => {
+      pedidos.value = res;
+    });
+  }, 5000);
 });
 
 definePageMeta({
