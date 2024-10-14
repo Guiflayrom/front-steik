@@ -31,10 +31,12 @@
         >
           <VRow class="d-flex align-center justify-center mt-1 h-full">
             <VCol>
-              <VIcon size="40">mdi-logout</VIcon>
+              <VIcon size="40" class="cursor-pointer" @click="logout()"
+                >mdi-logout</VIcon
+              >
             </VCol>
             <VCol>
-              <VIcon size="40">mdi-cog</VIcon>
+              <VIcon size="40" class="cursor-pointer">mdi-cog</VIcon>
             </VCol>
           </VRow>
         </VCard>
@@ -56,6 +58,13 @@
     </v-layout>
   </div>
 </template>
+
+<script setup>
+function logout() {
+  localStorage.setItem("restauranteId", false);
+  window.location.reload();
+}
+</script>
 
 <style>
 body {

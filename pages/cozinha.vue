@@ -1,5 +1,6 @@
 <template>
   <VLayout>
+    <LoginDialog></LoginDialog>
     <v-container align="center">
       <!-- Seção do Cabeçalho -->
       <v-row class="justify-center mt-4">
@@ -250,13 +251,20 @@
 </template>
 
 <script setup>
+let restauranteId = null;
+
+if (import.meta.client) {
+  restauranteId = localStorage.getItem("restauranteId");
+}
+
 onMounted(() => {
   setInterval(() => {
     $fetch("http://18.220.42.255:8000/api/pedidos/", {
       method: "GET",
     }).then((res) => {
+      res = res.filter((item) => item.restaurante == restauranteId);
       pedidos.value = res.filter(
-        (item) => item.status == "Em Aberto" || item.status == "Preparando",
+        (item) => item.status == "Em Aberto" || item.status == "Preparando"
       );
     });
   }, 5000);
@@ -311,20 +319,22 @@ function changeStatus(status) {
     {
       method: "PATCH",
       body: { status: status },
-    },
+    }
   ).then(() => {
     $fetch("http://18.220.42.255:8000/api/pedidos/", {
       method: "GET",
     })
       .then((res) => {
+        res = res.filter((item) => item.restaurante == restauranteId);
         pedidos.value = res.filter(
-          (item) => item.status == "Em Aberto" || item.status == "Preparando",
+          (item) => item.status == "Em Aberto" || item.status == "Preparando"
         );
       })
       .then(() => {
         $fetch("http://18.220.42.255:8000/api/notificacao/", {
           method: "POST",
           body: {
+            restaurante: restauranteId,
             texto: `Status pedido MESA ${selected_pedido.value.value.mesa} alterado para ${status.toUpperCase()}`,
           },
         });
@@ -342,7 +352,7 @@ function fazerPedido() {
     $fetch("http://18.220.42.255:8000/api/pedidos/", {
       method: "GET",
     }).then((res) => {
-      pedidos.value = res;
+      pedidos.value = res.filter((item) => item.restaurante == restauranteId);
     });
   });
 
@@ -353,20 +363,22 @@ onBeforeMount(() => {
   $fetch("http://18.220.42.255:8000/api/pedidos/", {
     method: "GET",
   }).then((res) => {
+    res = res.filter((item) => item.restaurante == restauranteId);
     pedidos.value = res.filter(
-      (item) => item.status == "Em Aberto" || item.status == "Preparando",
+      (item) => item.status == "Em Aberto" || item.status == "Preparando"
     );
   });
 
   $fetch("http://18.220.42.255:8000/api/mesas/", {
     method: "GET",
   }).then((res) => {
-    mesas.value = res;
+    mesas.value = res.filter((item) => item.restaurante == restauranteId);
   });
 
   $fetch("http://18.220.42.255:8000/api/pratos/", {
     method: "GET",
   }).then((res) => {
+    res = res.filter((item) => item.restaurante == restauranteId);
     all_plates.value = res.map((item) => item.nome);
   });
 });

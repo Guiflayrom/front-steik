@@ -47,7 +47,7 @@
                   .map((item) => item.total_pratos)
                   .reduce(
                     (acumulador, valorAtual) => acumulador + valorAtual,
-                    0,
+                    0
                   )
                   .toString()
               "
@@ -63,7 +63,7 @@
                   .map((item) => item.total_pratos)
                   .reduce(
                     (acumulador, valorAtual) => acumulador + valorAtual,
-                    0,
+                    0
                   )
                   .toString()
               "
@@ -301,10 +301,17 @@ import { ref } from "vue";
 const search_pedidos = ref("");
 const prato = ref("");
 
+let restauranteId = null;
+
+if (import.meta.client) {
+  restauranteId = localStorage.getItem("restauranteId");
+}
+
 const form_pedido = ref({
   nome_cliente: "",
   mesa: "",
   pratos_obj: [],
+  restaurante: restauranteId,
 });
 
 const pedido = ref(null);
@@ -317,7 +324,7 @@ function changeStatus(status) {
     $fetch("http://18.220.42.255:8000/api/pedidos/", {
       method: "GET",
     }).then((res) => {
-      pedidos.value = res;
+      pedidos.value = res.filter((item) => item.restaurante == restauranteId);
     });
   });
 
@@ -360,6 +367,7 @@ function fecharDialog() {
     nome_cliente: "",
     mesa: "",
     pratos_obj: [],
+    restaurante: restauranteId,
   };
   prato.value = "";
   dialog_fazer_pedido.value = false;
@@ -373,7 +381,7 @@ function fazerPedido() {
     $fetch("http://18.220.42.255:8000/api/pedidos/", {
       method: "GET",
     }).then((res) => {
-      pedidos.value = res;
+      pedidos.value = res.filter((item) => item.restaurante == restauranteId);
     });
   });
 
@@ -384,13 +392,13 @@ onBeforeMount(() => {
   $fetch("http://18.220.42.255:8000/api/pedidos/", {
     method: "GET",
   }).then((res) => {
-    pedidos.value = res;
+    pedidos.value = res.filter((item) => item.restaurante == restauranteId);
   });
 
   $fetch("http://18.220.42.255:8000/api/mesas/", {
     method: "GET",
   }).then((res) => {
-    mesas.value = res;
+    mesas.value = res.filter((item) => item.restaurante == restauranteId);
   });
 });
 
@@ -406,5 +414,6 @@ onMounted(() => {
 
 definePageMeta({
   layout: "costumer",
+  middleware: ["auth"],
 });
 </script>
