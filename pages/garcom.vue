@@ -1,503 +1,579 @@
 <template>
-  <VLayout>
-    <LoginDialog></LoginDialog>
-    <v-container align="center">
-      <!-- Seção do Cabeçalho -->
-      <v-row class="justify-center mt-4">
-        <!-- Logo do restaurante -->
-        <v-img
-          aling="center"
-          src="https://i.imgur.com/4PpSNEs_d.webp?maxwidth=1520&fidelity=grand"
-          alt="Steakhouse Logo"
-          max-width="400"
-        ></v-img>
-      </v-row>
-      <v-row v-if="nav == 0">
-        <v-col cols="12">
-          <div
-            class="text-5xl mb-2 text-center"
-            align="center"
-            style="color: white"
+  <div class="min-h-screen bg-gray-900 text-gray-100 font-sans">
+    <!-- Caixa Selection Modal -->
+    <div
+      v-if="showCaixaModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4">
+        <h2 class="text-2xl font-bold mb-4">Selecionar Caixa</h2>
+        <select
+          v-model="selectedCaixaId"
+          class="w-full px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base mb-4"
+        >
+          <option value="">Selecione um Caixa</option>
+          <option v-for="caixa in caixas" :key="caixa.id" :value="caixa.id">
+            {{ caixa.nome }}
+          </option>
+        </select>
+        <button
+          @click="confirmCaixaSelection"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+          :disabled="!selectedCaixaId"
+        >
+          Confirmar
+        </button>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-gray-800 shadow-lg p-4">
+      <div class="container mx-auto flex justify-between items-center">
+        <h1 class="text-xl md:text-2xl font-bold font-display">Garçom Steik SBS</h1>
+        <div class="flex items-center space-x-2 md:space-x-4">
+          <button
+            @click="logout"
+            class="bg-red-500 hover:bg-red-600 text-white p-2 md:px-4 md:py-2 rounded-lg transition duration-300 ease-in-out"
           >
-            Mesas
+            <i class="mdi mdi-logout mr-1 md:mr-2"></i>Sair
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="bg-gray-800 shadow-lg">
+      <div class="container mx-auto flex">
+        <button
+          @click="currentTab = 'main'"
+          :class="[
+            'flex-1 py-3 text-center transition duration-300 ease-in-out',
+            currentTab === 'main'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600',
+          ]"
+        >
+          <i class="mdi mdi-table-chair mr-1 md:mr-2"></i>Pedidos
+        </button>
+        <button
+          @click="currentTab = 'notifications'"
+          :class="[
+            'flex-1 py-3 text-center transition duration-300 ease-in-out',
+            currentTab === 'notifications'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600',
+          ]"
+        >
+          <i class="mdi mdi-bell mr-1 md:mr-2"></i>Notificações
+          <span
+            v-if="notifications.length"
+            class="ml-1 bg-red-500 text-white rounded-full px-2 py-1 text-xs"
+          >
+            {{ notifications.length }}
+          </span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6 md:py-8">
+      <!-- Main Interface -->
+      <div v-if="currentTab === 'main'">
+        <!-- Table Selection -->
+        <div class="mb-6 md:mb-8">
+          <h2 class="text-xl md:text-2xl font-semibold mb-4">Selecionar Mesa</h2>
+          <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
+            <button
+              :disabled="table.status == 'Ocupada'"
+              v-for="table in tables"
+              :key="table.numero_mesa"
+              @click="selectTable(table)"
+              :class="[
+                'p-2 md:p-4 rounded-lg font-semibold transition duration-300 ease-in-out text-sm md:text-base',
+                table.numero_mesa === selectedTable?.numero_mesa
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600',
+              ]"
+            >
+              Mesa {{ table.numero_mesa }}
+            </button>
           </div>
-          <v-card class="pa-4" color="black">
-            <v-table height="600px" class="bg-black">
-              <thead>
-                <tr>
-                  <th
-                    class="bg-black-darken-2 text-center"
-                    v-for="(column, index) in ['Mesa', 'Lugares', 'Pedir']"
-                    :key="index"
-                  >
-                    {{ column }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="item in mesas"
-                  :key="item.numero_mesa"
-                  class="bg-black text-center"
+        </div>
+
+        <!-- Order Management -->
+        <div v-if="selectedTable" class="bg-gray-800 rounded-xl p-4 md:p-6 shadow-lg">
+          <h3 class="text-lg md:text-xl font-semibold mb-4">
+            Pedido - Mesa {{ selectedTable.numero_mesa }}
+          </h3>
+
+          <!-- Tab Navigation for Order Management -->
+          <div class="mb-4">
+            <button
+              v-for="tab in ['current', 'history']"
+              :key="tab"
+              @click="orderTab = tab"
+              :class="[
+                'px-4 py-2 rounded-t-lg font-semibold transition duration-300 ease-in-out text-sm md:text-base mr-2',
+                orderTab === tab
+                  ? 'bg-gray-700 text-white'
+                  : 'bg-gray-600 text-gray-300 hover:bg-gray-700',
+              ]"
+            >
+              {{ tab === "current" ? "Pedido Atual" : "Histórico" }}
+            </button>
+          </div>
+
+          <!-- Current Order Tab Content -->
+          <div v-if="orderTab === 'current'">
+            <!-- Product Selection -->
+            <div class="mb-6">
+              <h4 class="text-base md:text-lg font-semibold mb-2">Adicionar Itens</h4>
+              <div
+                class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 mb-4"
+              >
+                <input
+                  v-model="productSearch"
+                  type="text"
+                  placeholder="Buscar produto..."
+                  class="flex-grow px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+                />
+                <button
+                  @click="showAddProductModal = true"
+                  class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg transition duration-300 ease-in-out text-sm md:text-base"
                 >
-                  <td>{{ item.numero_mesa }}</td>
-                  <td>{{ item.lugares }}</td>
-                  <td>
-                    <VBtn
-                      color="info"
-                      @click="
-                        dialog_fazer_pedido = true;
-                        form_pedido.mesa = item.numero_mesa;
-                      "
-                    >
-                      Pedir
-                    </VBtn>
-                  </td>
-                </tr>
-              </tbody>
-            </v-table>
-          </v-card>
-        </v-col>
-      </v-row>
-      <v-row v-if="nav == 1">
-        <v-col cols="12">
-          <div
-            class="text-5xl mb-2 text-center"
-            align="center"
-            style="color: white"
-          >
-            Pedidos
-          </div>
-        </v-col>
-        <v-col cols="12">
-          <v-card class="pa-4" color="black">
-            <v-table height="260px" class="bg-black">
-              <thead>
-                <tr>
-                  <th
-                    class="bg-blue-black-2 text-center"
-                    v-for="(column, index) in [
-                      'Mesa',
-                      'Cliente',
-                      'Horário',
-                      'Status',
-                    ]"
-                    :key="index"
+                  <i class="mdi mdi-plus mr-1 md:mr-2"></i>Adicionar
+                </button>
+              </div>
+              <div class="h-64 overflow-y-auto bg-gray-700 rounded-lg">
+                <ul class="divide-y divide-gray-600">
+                  <li
+                    v-for="item in filteredProducts"
+                    :key="item.id"
+                    class="flex justify-between items-center p-2 md:p-3 hover:bg-gray-600 transition duration-300 ease-in-out"
                   >
-                    {{ column }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="item in filteredItems"
+                    <span class="text-sm md:text-base"
+                      >{{ item.nome }} - R$ {{ item.valor.toFixed(2) }}</span
+                    >
+                    <button
+                      @click="addToOrder(item)"
+                      class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 md:px-3 md:py-1 rounded-lg transition duration-300 ease-in-out text-sm md:text-base"
+                    >
+                      <i class="mdi mdi-plus"></i>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Current Order -->
+            <div class="mb-6">
+              <h4 class="text-base md:text-lg font-semibold mb-2">Itens do Pedido</h4>
+              <ul class="space-y-2">
+                <li
+                  v-for="item in currentOrder"
                   :key="item.id"
-                  class="bg-black text-center"
+                  class="flex justify-between items-center bg-gray-700 p-2 md:p-3 rounded-lg"
                 >
-                  <td>{{ item.mesa }}</td>
-                  <td>{{ item.nome_cliente }}</td>
-                  <td>{{ item.horario_pedido }}</td>
-                  <td>
-                    <VChip
-                      variant="elevated"
-                      :color="
-                        item.status == 'Em Aberto'
-                          ? 'warning'
-                          : item.status == 'Preparando'
-                            ? 'info'
-                            : item.status == 'Pedido Pronto'
-                              ? 'error'
-                              : 'green'
-                      "
-                      @click="
-                        dialog_status = true;
-                        selected_pedido.value = { ...item };
-                      "
+                  <span class="text-sm md:text-base"
+                    >{{ item.quantity }}x {{ item.nome }} - R$
+                    {{ (item.valor * item.quantity).toFixed(2) }}</span
+                  >
+                  <div class="flex items-center space-x-1 md:space-x-2">
+                    <button
+                      @click="decreaseQuantity(item)"
+                      class="bg-yellow-500 hover:bg-yellow-600 text-white w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center transition duration-300 ease-in-out"
                     >
-                      {{ item.status }}
-                    </VChip>
-                  </td>
-                </tr>
-              </tbody>
-            </v-table>
-          </v-card>
-        </v-col>
-      </v-row>
-      <VRow v-if="nav == 2">
-        <v-col cols="12">
-          <div
-            class="text-5xl mb-2 text-center"
-            align="center"
-            style="color: white"
-          >
-            Notificações
-          </div>
-        </v-col>
-        <v-col cols="12">
-          <div
-            class="text-white"
-            v-for="(item, index) in notificacoes"
-            :key="index"
-          >
-            <VRow>
-              <VCol cols="8">
-                <div>
-                  {{ item.texto }}
-                </div>
-              </VCol>
-              <VCol>
-                <v-btn color="info" @click="viewNotificacao(item.id)">OK</v-btn>
-              </VCol>
-            </VRow>
-          </div>
-        </v-col>
-      </VRow>
+                      <i class="mdi mdi-minus"></i>
+                    </button>
+                    <button
+                      @click="increaseQuantity(item)"
+                      class="bg-green-500 hover:bg-green-600 text-white w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center transition duration-300 ease-in-out"
+                    >
+                      <i class="mdi mdi-plus"></i>
+                    </button>
+                    <button
+                      @click="removeFromOrder(item)"
+                      class="bg-red-500 hover:bg-red-600 text-white w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center transition duration-300 ease-in-out"
+                    >
+                      <i class="mdi mdi-delete"></i>
+                    </button>
+                  </div>
+                </li>
+              </ul>
+            </div>
 
-      <v-bottom-navigation
-        v-model="nav"
-        class="bg-black"
-        color="white"
-        grow
-        dark
-      >
-        <v-btn>
-          <v-icon>mdi-chair-school</v-icon>
-        </v-btn>
-        <v-btn>
-          <v-icon>mdi-pencil</v-icon>
-        </v-btn>
-        <v-btn>
-          <v-icon>mdi-bell</v-icon>
-          <div class="text-xl text-red-500">
-            {{ notificacoes.length ? notificacoes.length : "" }}
-          </div>
-        </v-btn>
-      </v-bottom-navigation>
-    </v-container>
+            <!-- Order Total -->
+            <div class="mb-6">
+              <h4 class="text-base md:text-lg font-semibold mb-2">Total do Pedido</h4>
+              <p class="text-xl md:text-2xl font-bold">R$ {{ orderTotal.toFixed(2) }}</p>
+            </div>
 
-    <VDialog
-      v-model="dialog_fazer_pedido"
-      scrollable
-      persistent
-      :overlay="false"
-      max-width="600px"
-      transition="dialog-transition"
-    >
-      <VCard elevation="10" color="#14161b">
-        <VCard elevation="0" color="#14181B" class="ma-5">
-          <div class="d-flex my-5">
-            <div class="text-4xl ml-10">Novo pedido</div>
-            <div class="text-4xl ml-auto mr-10">
-              <VIcon class="cursor-pointer" @click="fecharDialog()"
-                >mdi-close</VIcon
+            <!-- Order Actions -->
+            <div
+              class="flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-4"
+            >
+              <button
+                @click="cancelOrder"
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out text-sm md:text-base"
               >
+                Cancelar Pedido
+              </button>
+              <button
+                @click="submitOrder"
+                :disabled="currentOrder.length === 0"
+                :class="[
+                  'px-4 py-2 rounded-lg transition duration-300 ease-in-out text-sm md:text-base',
+                  currentOrder.length > 0
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-gray-500 text-gray-300 cursor-not-allowed',
+                ]"
+              >
+                Enviar Pedido
+              </button>
             </div>
           </div>
-        </VCard>
-        <VCard
-          elevation="0"
-          color="#14181B"
-          height="300"
-          class="ma-5 pa-5 overflow-y-auto"
-        >
-          <VTextField
-            v-model="form_pedido.nome_cliente"
-            label="Nome do cliente"
-            variant="outlined"
-          />
-          <VSelect
-            :items="mesas.map((item) => item.numero_mesa)"
-            v-model="form_pedido.mesa"
-            variant="outlined"
-            label="Mesa"
-          ></VSelect>
-          <div>Pratos</div>
-          <div class="mb-5">
-            <v-list
-              style="background-color: #14181b; color: white"
-              class="rounded-xl"
-              :items="
-                form_pedido.pratos_obj?.map(
-                  (item) => `(${item.quantidade}) - ${item.nome}`
-                )
-              "
-            ></v-list>
-          </div>
-        </VCard>
-        <VCard
-          elevation="0"
-          color="#14181B"
-          class="ma-5 px-3 pt-3"
-          align="center"
-        >
-          <VRow>
-            <VCol>
-              <v-autocomplete
-                v-model="prato"
-                :items="all_plates"
-                label="Prato"
-                variant="underlined"
-              />
-              <v-number-input
-                v-model="pratoQtd"
-                control-variant="split"
-                :min="1"
-              ></v-number-input>
-            </VCol>
-            <VCol
-              cols="4"
-              class="cursor-pointer"
-              style="background-color: #1d2124"
-            >
-              <VIcon
-                class="mt-10 cursor-pointer justify-center align-middle"
-                align="center"
-                size="36"
-                :disabled="!(prato && pratoQtd)"
-                @click="addPrato()"
-                >mdi-plus</VIcon
-              >
-            </VCol>
-          </VRow>
-        </VCard>
-        <VCard elevation="0" color="#14181B" class="ma-5 pa-5" align="center">
-          <VRow>
-            <VCol>
-              <VBtn color="error" @click="fecharDialog()"> Cancelar </VBtn>
-            </VCol>
-            <VCol
-              ><VBtn
-                color="primary"
-                @click="fazerPedido()"
-                :disabled="form_pedido.nome_cliente && form_pedido.numero_mesa"
-                >Fazer pedido</VBtn
-              ></VCol
-            >
-          </VRow>
-        </VCard>
-      </VCard>
-    </VDialog>
-    <VDialog
-      v-model="dialog_status"
-      scrollable
-      persistent
-      :overlay="false"
-      max-width="700px"
-      transition="dialog-transition"
-    >
-      <VCard elevation="10" color="#14161b">
-        <VCard elevation="0" color="#14181B" class="ma-5">
-          <div class="d-flex my-5">
-            <div class="text-4xl ml-10">Mudar de status</div>
-            <div class="text-4xl ml-auto mr-10">
-              <VIcon
-                class="cursor-pointer"
-                @click="dialog_status = !dialog_status"
-                >mdi-close</VIcon
-              >
+
+          <!-- Order History Tab Content -->
+          <div v-else-if="orderTab === 'history'" class="bg-gray-700 rounded-lg p-4">
+            <h4 class="text-base md:text-lg font-semibold mb-2">Histórico de Pedidos</h4>
+            <div class="h-64 overflow-y-auto">
+              <table class="w-full">
+                <thead>
+                  <tr>
+                    <th class="text-left py-2 px-4">Código</th>
+                    <th class="text-left py-2 px-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="order in orderHistory"
+                    :key="order.code"
+                    class="border-t border-gray-600"
+                  >
+                    <td class="py-2 px-4">{{ order.code }}</td>
+                    <td class="py-2 px-4">
+                      <span :class="getStatusClass(order.status)">
+                        {{ order.status }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
-        </VCard>
-        <VCard elevation="0" color="#14181B" class="ma-5 pa-5 overflow-y-auto">
-          <VRow>
-            <VCol>
-              <VBtn color="warning" @click="changeStatus('Em Aberto')"
-                >Em Aberto</VBtn
+        </div>
+      </div>
+
+      <!-- Notifications Screen -->
+      <div v-else-if="currentTab === 'notifications'">
+        <h2 class="text-xl md:text-2xl font-semibold mb-4">Notificações</h2>
+        <div v-if="notifications.length === 0" class="text-center text-gray-400 py-8">
+          <i class="mdi mdi-bell-off text-6xl mb-4"></i>
+          <p class="text-xl">Nenhuma notificação no momento</p>
+        </div>
+        <ul v-else class="space-y-4">
+          <li
+            v-for="notification in notifications"
+            :key="notification.id"
+            class="bg-gray-800 rounded-xl p-4 md:p-6 shadow-lg"
+          >
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-lg md:text-xl font-semibold">{{
+                notification.titulo
+              }}</span>
+              <span :class="getStatusClass(notification.status)">{{
+                notification.status
+              }}</span>
+            </div>
+            <p class="text-sm md:text-base mb-2">{{ notification.texto }}</p>
+            <div class="flex justify-between items-center text-sm text-gray-400">
+              <!-- <span>Mesa: {{ notification.table }}</span> -->
+              <span
+                >{{ notification.horario.split(":")[0] }}:{{
+                  notification.horario.split(":")[1]
+                }}</span
               >
-            </VCol>
-            <VCol>
-              <VBtn color="info" @click="changeStatus('Preparando')"
-                >Preparando</VBtn
-              >
-            </VCol>
-            <VCol>
-              <VBtn color="error" @click="changeStatus('Pedido Pronto')"
-                >Pedido Pronto</VBtn
-              >
-            </VCol>
-            <VCol>
-              <VBtn color="success" @click="changeStatus('Fechado')"
-                >Fechado</VBtn
-              >
-            </VCol>
-          </VRow>
-        </VCard>
-      </VCard>
-    </VDialog>
-  </VLayout>
+            </div>
+            <button
+              @click="markAsRead(notification.id)"
+              class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 md:px-4 md:py-2 rounded-lg transition duration-300 ease-in-out text-sm md:text-base"
+            >
+              Marcar como lido
+            </button>
+          </li>
+        </ul>
+      </div>
+    </main>
+
+    <!-- Add Product Modal -->
+    <div
+      v-if="showAddProductModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-gray-800 rounded-xl p-4 md:p-6 w-full max-w-md">
+        <h3 class="text-lg md:text-xl font-semibold mb-4">Adicionar Novo Produto</h3>
+        <form @submit.prevent="addNewProduct" class="space-y-4">
+          <div>
+            <label for="productName" class="block text-sm font-medium text-gray-300 mb-1"
+              >Nome do Produto</label
+            >
+            <input
+              v-model="newProduct.nome"
+              id="productName"
+              type="text"
+              required
+              class="w-full px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+            />
+          </div>
+          <div>
+            <label for="productPrice" class="block text-sm font-medium text-gray-300 mb-1"
+              >Preço</label
+            >
+            <input
+              v-model="newProduct.valor"
+              id="productPrice"
+              type="numero_mesa"
+              step="0.01"
+              required
+              class="w-full px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+            />
+          </div>
+          <div class="flex justify-end space-x-4">
+            <button
+              type="button"
+              @click="showAddProductModal = false"
+              class="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded-lg transition duration-300 ease-in-out text-sm md:text-base"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg transition duration-300 ease-in-out text-sm md:text-base"
+            >
+              Adicionar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { VNumberInput } from "vuetify/labs/VNumberInput";
+import { ref, computed } from "vue";
+import api from "~/api";
 
-let restauranteId = null;
-
-if (import.meta.client) {
-  restauranteId = localStorage.getItem("restauranteId");
-}
-
-const notificacoes = ref([]);
-
-function viewNotificacao(item) {
-  $fetch(`http://18.220.42.255:8000/api/notificacao/${item}/`, {
-    method: "PATCH",
-    body: { visualizada: true },
-  }).then((res) => {
-    $fetch("http://18.220.42.255:8000/api/notificacao/", {
-      method: "GET",
-    }).then((res) => {
-      res = res.filter((item) => item.restaurante == restauranteId);
-      notificacoes.value = res.filter((item) => item.visualizada === false);
-    });
-  });
-}
-
-onMounted(() => {
-  setInterval(() => {
-    $fetch("http://18.220.42.255:8000/api/notificacao/", {
-      method: "GET",
-    }).then((res) => {
-      res = res.filter((item) => item.restaurante == restauranteId);
-      notificacoes.value = res.filter((item) => item.visualizada === false);
-      if (notificacoes.value.length > 0) {
-        beep();
-        navigator.vibrate(2000);
-      }
-    });
-  }, 2000);
-});
-
-const nav = ref(0);
-const pratoQtd = ref(null);
-const dialog_status = ref(false);
-
-const search_pedidos = ref("");
-const prato = ref("");
-
-const form_pedido = ref({
-  nome_cliente: "",
-  mesa: "",
-  pratos_obj: [],
-  restaurante: restauranteId,
-});
-
-const dialog_fazer_pedido = ref(false);
-
-const mesas = ref([]);
-
-const pedidos = ref([]);
-
-const selected_pedido = ref({});
-
-const all_plates = ref([]);
-
-function addPrato() {
-  form_pedido.value.pratos_obj.push({
-    nome: `${prato.value}`,
-    quantidade: pratoQtd.value,
-  });
-  prato.value = "";
-  pratoQtd.value = null;
-}
-
-const filteredItems = computed(() => {
-  return pedidos.value.filter((item) => {
-    return (
-      item.id
-        .toString()
-        .toLowerCase()
-        .includes(search_pedidos.value.toLowerCase()) ||
-      item.status.toLowerCase().includes(search_pedidos.value.toLowerCase()) ||
-      item.cliente.toLowerCase().includes(search_pedidos.value.toLowerCase()) ||
-      item.horario_pedido
-        .toLowerCase()
-        .includes(search_pedidos.value.toLowerCase())
-    );
-  });
-});
-
-function fecharDialog() {
-  form_pedido.value = {
-    nome_cliente: "",
-    mesa: "",
-    pratos_obj: [],
-    restaurante: restauranteId,
-  };
-  prato.value = "";
-  dialog_fazer_pedido.value = false;
-}
-
-function changeStatus(status) {
-  $fetch(
-    `http://18.220.42.255:8000/api/pedidos/${selected_pedido.value.value.id}/`,
-    {
-      method: "PATCH",
-      body: { status: status },
-    }
-  ).then((_) => {
-    $fetch("http://18.220.42.255:8000/api/pedidos/", {
-      method: "GET",
-    }).then((res) => {
-      pedidos.value = res.filter((item) => item.restaurante == restauranteId);
-    });
-  });
-
-  dialog_status.value = false;
-}
-
-function fazerPedido() {
-  $fetch("http://18.220.42.255:8000/api/pedidos/", {
-    method: "POST",
-    body: form_pedido.value,
-  }).then((res) => {
-    $fetch("http://18.220.42.255:8000/api/pedidos/", {
-      method: "GET",
-    }).then((res) => {
-      pedidos.value = res.filter((item) => item.restaurante == restauranteId);
-    });
-  });
-
-  fecharDialog();
-}
+const showCaixaModal = ref(false);
+const selectedCaixaId = ref("");
+const caixas = ref([]);
 
 onBeforeMount(() => {
-  $fetch("http://18.220.42.255:8000/api/notificacao/", {
-    method: "GET",
-  }).then((res) => {
-    res = res.filter((item) => item.restaurante == restauranteId);
-    notificacoes.value = res.filter((item) => item.visualizada === false);
+  api("mesas/").then((res) => {
+    tables.value = res;
   });
 
-  $fetch("http://18.220.42.255:8000/api/pedidos/", {
-    method: "GET",
-  }).then((res) => {
-    pedidos.value = res.filter((item) => item.restaurante == restauranteId);
-  });
-
-  $fetch("http://18.220.42.255:8000/api/mesas/", {
-    method: "GET",
-  }).then((res) => {
-    mesas.value = res.filter((item) => item.restaurante == restauranteId);
-  });
-
-  $fetch("http://18.220.42.255:8000/api/pratos/", {
-    method: "GET",
-  }).then((res) => {
-    res = res.filter((item) => item.restaurante == restauranteId);
-    all_plates.value = res.map((item) => item.nome);
+  api("caixas/").then((res) => {
+    caixas.value = res.map((item) => {
+      return { ...item, nome: "Caixa " + item.operador };
+    });
   });
 });
 
-function beep() {
-  var snd = new Audio(
-    "data:audio/wav;base64,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qJrx4KOQjahZxWbcZgztj2c49nKmkId44S71j0c8eV9yDK6uPRzx5X18eDvjvQ6yKo9ZSS6l//8elePK/Lf//IInrOF/FvDoADYAGBMGb7FtErm5MXMlmPAJQVgWta7Zx2go+8xJ0UiCb8LHHdftWyLJE0QIAIsI+UbXu67dZMjmgDGCGl1H+vpF4NSDckSIkk7Vd+sxEhBQMRU8j/12UIRhzSaUdQ+rQU5kGeFxm+hb1oh6pWWmv3uvmReDl0UnvtapVaIzo1jZbf/pD6ElLqSX+rUmOQNpJFa/r+sa4e/pBlAABoAAAAA3CUgShLdGIxsY7AUABPRrgCABdDuQ5GC7DqPQCgbbJUAoRSUj+NIEig0YfyWUho1VBBBA//uQZB4ABZx5zfMakeAAAAmwAAAAF5F3P0w9GtAAACfAAAAAwLhMDmAYWMgVEG1U0FIGCBgXBXAtfMH10000EEEEEECUBYln03TTTdNBDZopopYvrTTdNa325mImNg3TTPV9q3pmY0xoO6bv3r00y+IDGid/9aaaZTGMuj9mpu9Mpio1dXrr5HERTZSmqU36A3CumzN/9Robv/Xx4v9ijkSRSNLQhAWumap82WRSBUqXStV/YcS+XVLnSS+WLDroqArFkMEsAS+eWmrUzrO0oEmE40RlMZ5+ODIkAyKAGUwZ3mVKmcamcJnMW26MRPgUw6j+LkhyHGVGYjSUUKNpuJUQoOIAyDvEyG8S5yfK6dhZc0Tx1KI/gviKL6qvvFs1+bWtaz58uUNnryq6kt5RzOCkPWlVqVX2a/EEBUdU1KrXLf40GoiiFXK///qpoiDXrOgqDR38JB0bw7SoL+ZB9o1RCkQjQ2CBYZKd/+VJxZRRZlqSkKiws0WFxUyCwsKiMy7hUVFhIaCrNQsKkTIsLivwKKigsj8XYlwt/WKi2N4d//uQRCSAAjURNIHpMZBGYiaQPSYyAAABLAAAAAAAACWAAAAApUF/Mg+0aohSIRobBAsMlO//Kk4soosy1JSFRYWaLC4qZBYWFRGZdwqKiwkNBVmoWFSJkWFxX4FFRQWR+LsS4W/rFRb/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VEFHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAU291bmRib3kuZGUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMjAwNGh0dHA6Ly93d3cuc291bmRib3kuZGUAAAAAAAAAACU="
+onMounted(async () => {
+  const storedCaixaId = localStorage.getItem("caixa_id");
+  if (storedCaixaId) {
+    selectedCaixaId.value = storedCaixaId;
+    showCaixaModal.value = false;
+  } else {
+    showCaixaModal.value = true;
+  }
+
+  api(`restaurantes/${localStorage.getItem("restaurante_id")}/pratos/`).then((res) => {
+    products.value = res;
+  });
+
+  setInterval(() => {
+    api(`restaurantes/${localStorage.getItem("restaurante_id")}/notificacoes/`).then(
+      (res) => {
+        notifications.value = res.filter((res) => res.visualizada == false);
+      }
+    );
+  }, 5000);
+});
+
+const currentTab = ref("main");
+const orderTab = ref("current");
+
+const tables = ref([]);
+
+const products = ref([]);
+
+const selectedTable = ref(null);
+const currentOrder = ref([]);
+const productSearch = ref("");
+const showAddProductModal = ref(false);
+const newProduct = ref({ name: "", price: 0 });
+
+const notifications = ref([]);
+
+const orderHistory = ref([]);
+
+const filteredProducts = computed(() => {
+  if (!productSearch.value) return products.value;
+  const search = productSearch.value.toLowerCase();
+  return products.value.filter((product) => product.nome.toLowerCase().includes(search));
+});
+
+const orderTotal = computed(() => {
+  return currentOrder.value.reduce(
+    (total, item) => total + item.valor * item.quantity,
+    0
   );
-  snd.play();
-}
+});
+
+const confirmCaixaSelection = () => {
+  if (selectedCaixaId.value) {
+    localStorage.setItem("caixa_id", selectedCaixaId.value);
+    showCaixaModal.value = false;
+  }
+};
+
+const selectTable = (table) => {
+  selectedTable.value = table;
+  currentOrder.value = [];
+};
+
+const addToOrder = (product) => {
+  const existingItem = currentOrder.value.find((item) => item.id === product.id);
+  if (existingItem) {
+    existingItem.quantity++;
+  } else {
+    currentOrder.value.push({ ...product, quantity: 1 });
+  }
+};
+
+const decreaseQuantity = (item) => {
+  if (item.quantity > 1) {
+    item.quantity--;
+  } else {
+    removeFromOrder(item);
+  }
+};
+
+const increaseQuantity = (item) => {
+  item.quantity++;
+};
+
+const removeFromOrder = (item) => {
+  const index = currentOrder.value.findIndex((orderItem) => orderItem.id === item.id);
+  if (index !== -1) {
+    currentOrder.value.splice(index, 1);
+  }
+};
+
+const cancelOrder = () => {
+  currentOrder.value = [];
+  selectedTable.value = null;
+};
+
+const submitOrder = () => {
+  // Implement order submission logic here
+  api("pedidos/", "POST", {
+    mesa: selectedTable.value.id,
+    items: currentOrder.value.map((item) => {
+      return { id: item.id, qtd: item.quantity };
+    }),
+    caixa: parseInt(localStorage.getItem("caixa_id")),
+  }).then((res) => {
+    console.log(res);
+  });
+
+  // Add a new notification for the submitted order
+  notifications.value.push({
+    id: Date.now(),
+    title: "Novo Pedido",
+    message: `Um novo pedido foi feito na Mesa ${selectedTable.value.numero_mesa}.`,
+    status: "Novo",
+    table: selectedTable.value.numero_mesa,
+    time: new Date(),
+  });
+  // Add the new order to the history
+  orderHistory.value.unshift({
+    code: `P${String(orderHistory.value.length + 1).padStart(3, "0")}`,
+    status: "pendente",
+  });
+  currentOrder.value = [];
+  selectedTable.value = null;
+};
+
+const addNewProduct = () => {
+  const newId = Math.max(...products.value.map((p) => p.id)) + 1;
+  products.value.push({
+    id: newId,
+    name: newProduct.value.nome,
+    price: parseFloat(newProduct.value.valor),
+  });
+  newProduct.value = { name: "", price: 0 };
+  showAddProductModal.value = false;
+};
+
+const formatTime = (date) => {
+  return date.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const getStatusClass = (status) => {
+  const baseClasses = "px-2 py-1 rounded-full text-xs font-semibold";
+  switch (status) {
+    case "aviso":
+      return `${baseClasses} bg-yellow-500 text-yellow-900`;
+    case "em preparo":
+      return `${baseClasses} bg-blue-500 text-blue-900`;
+    case "pronto":
+      return `${baseClasses} bg-green-500 text-green-900`;
+    case "novo":
+      return `${baseClasses} bg-purple-500 text-purple-900`;
+    default:
+      return `${baseClasses} bg-gray-500 text-gray-900`;
+  }
+};
+
+const markAsRead = (id) => {
+  const index = notifications.value.findIndex((notification) => notification.id === id);
+  if (index !== -1) {
+    notifications.value.splice(index, 1);
+  }
+  api(
+    `restaurantes/${localStorage.getItem("restaurante_id")}/notificacoes/${id}/`,
+    "PATCH",
+    { visualizada: true }
+  );
+};
+
+const logout = () => {
+  api("logout/", "POST", { refresh: localStorage.getItem("refresh") });
+  localStorage.setItem("refresh", "");
+  localStorage.setItem("access", "");
+  navigateTo("/login/");
+};
 </script>
 
 <style>
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Slab:wght@300;400;500;600;700&display=swap");
+@import "https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css";
+
+:root {
+  --font-sans: "Poppins", sans-serif;
+  --font-display: "Roboto Slab", serif;
+}
+
 body {
-  background-color: black;
+  font-family: var(--font-sans);
+}
+
+.font-display {
+  font-family: var(--font-display);
 }
 </style>

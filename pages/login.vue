@@ -1,131 +1,137 @@
 <template>
-  <v-container class="fill-height d-flex justify-center align-center">
-    <v-img
-      src="https://i.imgur.com/4PpSNEs_d.webp?maxwidth=1520&fidelity=grand"
-      class="background"
-      cover
-    ></v-img>
-    <v-card class="pa-8" elevation="4" width="500">
-      <v-card-title class="text-h5 text-center"
-        >Entre na sua conta</v-card-title
+  <div
+    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black p-6"
+  >
+    <div class="w-full max-w-md">
+      <div class="text-center mb-8">
+        <img
+          src="https://i.imgur.com/4PpSNEs_d.webp?maxwidth=400&fidelity=grand"
+          alt="Logo do Restaurante"
+          class="mx-auto w-32 h-32 object-contain"
+        />
+        <h1 class="mt-6 text-3xl font-bold text-white">Bem-vindo de volta</h1>
+        <p class="mt-2 text-sm text-gray-400">
+          Por favor, faça login na sua conta
+        </p>
+      </div>
+
+      <form
+        @submit.prevent="submit"
+        class="bg-gray-800 rounded-xl shadow-xl p-8"
       >
-
-      <v-card-text>
-        <v-form ref="loginForm" v-model="valid" lazy-validation>
-          <v-text-field
-            v-model="login.email"
-            label="E-mail"
-            :rules="emailRules"
-            required
-            prepend-icon="mdi-email"
-          ></v-text-field>
-
-          <v-text-field
-            v-model="login.password"
-            label="Senha"
-            :type="showPassword ? 'text' : 'password'"
-            :rules="passwordRules"
-            required
-            prepend-icon="mdi-lock"
-            append-icon="mdi-eye"
-            @click:append="togglePassword"
-          ></v-text-field>
-
-          <v-btn
-            color="black"
-            class="mt-4"
-            block
-            @click="submit"
-            :disabled="!valid"
+        <div class="mb-6">
+          <label
+            for="email"
+            class="block text-sm font-medium text-gray-300 mb-2"
+            >E-mail</label
           >
-            Login
-          </v-btn>
-        </v-form>
-      </v-card-text>
-    </v-card>
-  </v-container>
+          <div class="relative">
+            <input
+              v-model="login.email"
+              id="email"
+              type="email"
+              required
+              class="w-full pl-10 pr-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition duration-200"
+              placeholder="Digite seu e-mail"
+            />
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+              <i class="mdi mdi-email text-gray-400"></i>
+            </span>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <label
+            for="password"
+            class="block text-sm font-medium text-gray-300 mb-2"
+            >Senha</label
+          >
+          <div class="relative">
+            <input
+              v-model="login.password"
+              id="password"
+              :type="showPassword ? 'text' : 'password'"
+              required
+              class="w-full pl-10 pr-10 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition duration-200"
+              placeholder="Digite sua senha"
+            />
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+              <i class="mdi mdi-lock text-gray-400"></i>
+            </span>
+            <button
+              type="button"
+              @click="togglePassword"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-200"
+            >
+              <i :class="showPassword ? 'mdi mdi-eye-off' : 'mdi mdi-eye'"></i>
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 flex items-center justify-center"
+        >
+          <i class="mdi mdi-login mr-2"></i>
+          Entrar
+        </button>
+      </form>
+
+      <p class="mt-8 text-center text-sm text-gray-400">
+        Não seu restaurante não tem uma conta?
+        <br />
+        <a
+          href="mailto:projetos@vitalisdigital.online?subject=Precisamos%20de%20uma%20conta%20no%20PDV!&body=Olá%2C%0D%0A%0D%0AEstou entrando em contato para solicitar a criação de uma conta relacionada ao nosso projeto. Poderíamos agendar uma reunião ou uma breve conversa para discutir os detalhes e os próximos passos?%0D%0A%0D%0AFico no aguardo de um retorno.%0D%0A%0D%0AAtenciosamente,%0D%0A[Seu Nome]"
+          class="font-medium text-blue-500 hover:text-blue-400"
+          >Entre em contato com o administrador</a
+        >
+      </p>
+    </div>
+  </div>
+  <VSnackbar color="red" v-model="showSnackbar" timeout="2000">
+    E-mail ou senha incorretos!
+  </VSnackbar>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      valid: false,
-      showPassword: false,
-      login: {
-        email: "",
-        password: "",
-      },
-      emailRules: [
-        (v) => !!v || "O e-mail é obrigatório",
-        (v) => /.+@.+\..+/.test(v) || "E-mail inválido",
-      ],
-      passwordRules: [(v) => !!v || "A senha é obrigatória"],
-    };
-  },
-  methods: {
-    async submit() {
-      if (this.$refs.loginForm.validate()) {
-        try {
-          // Fazer o request para o backend
-          const response = await $fetch(
-            "http://18.220.42.255:8000/api/login/",
-            {
-              method: "POST",
-              body: {
-                email: this.login.email,
-                senha: this.login.password,
-              },
-            }
-          );
-          // Verificar se o login foi bem-sucedido
-          if (response.id) {
-            // Armazenar o ID do restaurante no localStorage
-            localStorage.setItem("restauranteId", response.id);
-            // Redirecionar para o dashboard ou outra página
-            this.$router.push("/");
-          } else {
-            alert(response.error || "Erro ao fazer login");
-          }
-        } catch (error) {
-          alert("Erro ao fazer login: " + error.message);
-        }
-      }
-    },
-    togglePassword() {
-      this.showPassword = !this.showPassword;
-    },
-  },
+<script setup>
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import api from "~/api";
+
+const router = useRouter();
+const showPassword = ref(false);
+const showSnackbar = ref(false);
+const login = ref({
+  email: "",
+  password: "",
+});
+
+const togglePassword = () => {
+  showPassword.value = !showPassword.value;
+};
+
+const submit = async () => {
+  api("login/", "POST", login.value)
+    .then((res) => {
+      localStorage.setItem("access", res.access);
+      localStorage.setItem("refresh", res.refresh);
+      localStorage.setItem("restaurante_id", res.restaurante_id);
+      localStorage.setItem("user_id", res.user_id);
+      localStorage.setItem("cooking_access", res.roles.pode_acessar_cozinha);
+      localStorage.setItem("waiter_access", res.roles.pode_acessar_garcom);
+      localStorage.setItem("pdv_access", res.roles.pode_acessar_pdv);
+      api("usuarios/detalhes/?id=" + res.user_id).then((res) => {
+        localStorage.setItem("nome_funcionario", res.pessoa.nome);
+        router.push("/");
+      });
+    })
+    .catch((error) => {
+      console.error("Falha no login:", error);
+      showSnackbar.value = true;
+    });
 };
 </script>
 
-<style scoped>
-.fill-height {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1; /* Coloca a imagem atrás do conteúdo */
-  opacity: 0.7; /* Adiciona um leve efeito de opacidade */
-}
-
-.v-card {
-  max-width: 550px;
-  width: 100%;
-  background-color: rgba(
-    255,
-    255,
-    255,
-    0.95
-  ); /* Torna o card semi-transparente */
-}
+<style>
+@import "https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css";
 </style>

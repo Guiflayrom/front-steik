@@ -1,391 +1,451 @@
 <template>
-  <VLayout>
-    <LoginDialog></LoginDialog>
-    <v-container align="center">
-      <!-- Seção do Cabeçalho -->
-      <v-row class="justify-center mt-4">
-        <!-- Logo do restaurante -->
-        <v-img
-          aling="center"
-          src="https://i.imgur.com/4PpSNEs_d.webp?maxwidth=1520&fidelity=grand"
-          alt="Steakhouse Logo"
-          max-width="400"
-        ></v-img>
-      </v-row>
-
-      <v-row>
-        <v-col cols="12">
-          <div
-            class="text-5xl mb-2 text-center"
-            align="center"
-            style="color: white"
+  <div class="min-h-screen bg-gray-900 text-gray-100 font-sans">
+    <!-- Header -->
+    <header class="bg-gray-800 shadow-lg p-4">
+      <div class="container mx-auto flex justify-between items-center">
+        <h1 class="text-2xl font-bold font-display">Cozinha Steik SBS</h1>
+        <div class="flex items-center space-x-4">
+          <span class="font-medium">{{ currentDate }}</span>
+          <button
+            @click="logout"
+            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out"
           >
-            Pedidos - Cozinha
+            <i class="mdi mdi-logout mr-2"></i>Sair
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+      <!-- Order Filters -->
+      <div class="mb-6 space-y-4">
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="status in ['Em Aberto', 'Preparando', 'Pedido Pronto']"
+            :key="status"
+            @click="toggleStatusFilter(status)"
+            :class="[
+              'px-4 py-2 rounded-lg font-semibold transition duration-300 ease-in-out',
+              statusFilters.includes(status)
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600',
+            ]"
+          >
+            {{ status }}
+          </button>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="type in ['Todos os Pratos', 'Prato Quente', 'Prato Frio']"
+            :key="type"
+            @click="setTypeFilter(type)"
+            :class="[
+              'px-4 py-2 rounded-lg font-semibold transition duration-300 ease-in-out',
+              typeFilter === type
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600',
+            ]"
+          >
+            {{ type }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div v-if="isLoading" class="text-center py-8">
+        <i class="mdi mdi-loading mdi-spin text-4xl"></i>
+        <p class="mt-2">Carregando pedidos...</p>
+      </div>
+
+      <!-- Error State -->
+      <div v-else-if="error" class="bg-red-500 text-white p-4 rounded-lg">
+        <p>{{ error }}</p>
+        <button @click="fetchOrders" class="mt-2 underline">Tentar novamente</button>
+      </div>
+
+      <!-- Orders Grid -->
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          v-for="order in filteredOrders"
+          :key="order.id"
+          class="bg-gray-800 rounded-xl p-6 shadow-lg"
+        >
+          <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center space-x-2">
+              <h3 class="text-xl font-semibold">Pedido {{ order.codigo }}</h3>
+              <i
+                :class="[
+                  'mdi text-2xl',
+                  order.is_delivery
+                    ? 'mdi-truck-delivery text-blue-400'
+                    : 'mdi-table-chair text-green-400',
+                ]"
+                :title="order.is_delivery ? 'Entrega' : 'Mesa'"
+              ></i>
+            </div>
+            <span :class="getStatusClass(order.status)">{{ order.status }}</span>
           </div>
-        </v-col>
-        <v-col cols="12">
-          <v-card class="pa-4" color="black">
-            <v-table height="260px" class="bg-black">
-              <thead>
-                <tr>
-                  <th
-                    class="bg-blue-black-2 text-center"
-                    v-for="(column, index) in [
-                      'Mesa',
-                      'Cliente',
-                      'Horário',
-                      'Status',
-                    ]"
-                    :key="index"
-                  >
-                    {{ column }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="item in pedidos"
-                  :key="item.id"
-                  class="bg-black text-center"
+          <div class="mb-4">
+            <p class="text-sm text-gray-400">
+              {{ order.is_delivery ? "Cliente" : "Mesa" }}:
+              {{ order.is_delivery ? order.pessoa?.nome || "N/A" : order.mesa }}
+            </p>
+            <p v-if="order.is_delivery" class="text-sm text-gray-400">
+              Endereço:
+              {{ `${order.pessoa?.endereco}, ${order.pessoa?.numero}` || "N/A" }}
+            </p>
+          </div>
+          <ul class="space-y-4 mb-4">
+            <li
+              v-for="item in filteredOrderItems(order)"
+              :key="item.id"
+              class="flex items-center justify-between"
+            >
+              <div class="flex items-center space-x-2">
+                <button
+                  @click="updateItemStatus(order, item)"
+                  :class="getItemStatusButtonClass(item.status)"
                 >
-                  <td>{{ item.mesa }}</td>
-                  <td>{{ item.nome_cliente }}</td>
-                  <td>{{ item.horario_pedido }}</td>
-                  <td>
-                    <VChip
-                      variant="elevated"
-                      :color="
-                        item.status == 'Em Aberto'
-                          ? 'warning'
-                          : item.status == 'Preparando'
-                            ? 'info'
-                            : item.status == 'Pedido Pronto'
-                              ? 'error'
-                              : 'green'
-                      "
-                      @click="
-                        dialog_status = true;
-                        selected_pedido.value = { ...item };
-                      "
-                    >
-                      {{ item.status }}
-                    </VChip>
-                  </td>
-                  <td>
-                    <VChip variant="elevated" @click="showPlate(item)">
-                      Visualizar pratos
-                    </VChip>
-                  </td>
-                </tr>
-              </tbody>
-            </v-table>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
+                  <i :class="getItemStatusIcon(item.status)"></i>
+                </button>
+                <span>{{ item.qtd }}x {{ item.prato.nome }}</span>
+              </div>
+              <span :class="getStatusClass(item.status)">
+                {{ item.status }}
+              </span>
+            </li>
+          </ul>
+          <div class="flex justify-between items-center">
+            <p class="text-sm text-gray-400">
+              Hora do pedido: {{ formatTime(order.horario_pedido) }}
+            </p>
+            <button
+              v-if="order.status !== 'Pedido Pronto'"
+              @click="updateOrderStatus(order)"
+              class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out"
+            >
+              Marcar como Pronto
+            </button>
+          </div>
+        </div>
+      </div>
 
-    <VDialog
-      v-model="dialog_fazer_pedido"
-      scrollable
-      persistent
-      :overlay="false"
-      max-width="600px"
-      transition="dialog-transition"
+      <!-- No Orders State -->
+      <div
+        v-if="!isLoading && !error && filteredOrders.length === 0"
+        class="text-center py-8"
+      >
+        <i class="mdi mdi-food-off text-4xl"></i>
+        <p class="mt-2">Nenhum pedido encontrado</p>
+      </div>
+    </main>
+
+    <!-- Snackbar -->
+    <div
+      v-if="showSnackbar"
+      class="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg transition-opacity duration-300"
+      :class="{ 'opacity-0': snackbarFading }"
     >
-      <VCard elevation="10" color="#14161b">
-        <VCard elevation="0" color="#14181B" class="ma-5">
-          <div class="d-flex my-5">
-            <div class="text-4xl ml-10">Novo pedido</div>
-            <div class="text-4xl ml-auto mr-10">
-              <VIcon class="cursor-pointer" @click="fecharDialog()"
-                >mdi-close</VIcon
-              >
-            </div>
-          </div>
-        </VCard>
-        <VCard
-          elevation="0"
-          color="#14181B"
-          height="300"
-          class="ma-5 pa-5 overflow-y-auto"
-        >
-          <VTextField
-            v-model="form_pedido.nome_cliente"
-            label="Nome do cliente"
-            variant="outlined"
-          />
-          <VSelect
-            :items="mesas.map((item) => item.numero_mesa)"
-            v-model="form_pedido.mesa"
-            variant="outlined"
-            label="Mesa"
-          ></VSelect>
-          <div>Pratos</div>
-          <div class="mb-5">
-            <v-list
-              style="background-color: #14181b; color: white"
-              class="rounded-xl"
-              :items="form_pedido.pratos_obj?.map((item) => item.nome)"
-            ></v-list>
-          </div>
-        </VCard>
-        <VCard
-          elevation="0"
-          color="#14181B"
-          class="ma-5 px-3 pt-3"
-          align="center"
-        >
-          <div class="d-flex">
-            <v-autocomplete
-              v-model="prato"
-              :items="all_plates"
-              label="Prato"
-              variant="underlined"
-            />
-            <VIcon
-              class="mt-4 cursor-pointer ml-10"
-              size="36"
-              @click="addPrato()"
-              >mdi-plus</VIcon
-            >
-          </div>
-        </VCard>
-        <VCard elevation="0" color="#14181B" class="ma-5 pa-5" align="center">
-          <VRow>
-            <VCol
-              ><VBtn color="error" @click="fecharDialog()">Cancelar</VBtn></VCol
-            >
-            <VCol
-              ><VBtn color="primary" @click="fazerPedido()"
-                >Fazer pedido</VBtn
-              ></VCol
-            >
-          </VRow>
-        </VCard>
-      </VCard>
-    </VDialog>
-    <VDialog
-      v-model="dialog_status"
-      scrollable
-      persistent
-      :overlay="false"
-      max-width="700px"
-      transition="dialog-transition"
-    >
-      <VCard elevation="10" color="#14161b">
-        <VCard elevation="0" color="#14181B" class="ma-5">
-          <div class="d-flex my-5">
-            <div class="text-4xl ml-10">Mudar de status</div>
-            <div class="text-4xl ml-auto mr-10">
-              <VIcon
-                class="cursor-pointer"
-                @click="dialog_status = !dialog_status"
-                >mdi-close</VIcon
-              >
-            </div>
-          </div>
-        </VCard>
-        <VCard elevation="0" color="#14181B" class="ma-5 pa-5 overflow-y-auto">
-          <VRow>
-            <VCol>
-              <VBtn color="warning" @click="changeStatus('Em Aberto')"
-                >Em Aberto</VBtn
-              >
-            </VCol>
-            <VCol>
-              <VBtn color="info" @click="changeStatus('Preparando')"
-                >Preparando</VBtn
-              >
-            </VCol>
-            <VCol>
-              <VBtn color="error" @click="changeStatus('Pedido Pronto')"
-                >Pedido Pronto</VBtn
-              >
-            </VCol>
-            <VCol>
-              <VBtn color="success" @click="changeStatus('Fechado')"
-                >Fechado</VBtn
-              >
-            </VCol>
-          </VRow>
-        </VCard>
-      </VCard>
-    </VDialog>
-    <VDialog
-      v-model="dialog_plate"
-      scrollable
-      persistent
-      :overlay="false"
-      max-width="600px"
-      transition="dialog-transition"
-    >
-      <VCard elevation="10" color="#14161b">
-        <VCard elevation="0" color="#14181B" class="ma-5">
-          <div class="d-flex my-5">
-            <div class="text-4xl ml-10">Pratos</div>
-            <div class="text-4xl ml-auto mr-10">
-              <VIcon class="cursor-pointer" @click="dialog_plate = false"
-                >mdi-close</VIcon
-              >
-            </div>
-          </div>
-        </VCard>
-        <VCard
-          elevation="0"
-          color="#14181B"
-          height="300"
-          class="ma-5 pa-5 overflow-y-auto"
-        >
-          <div
-            class="font-semibold text-4xl"
-            v-for="(item, index) in plates_selected"
-            :key="index"
-          >
-            - {{ item.prato.nome }} - Qtd: {{ item.quantidade }}
-            <div class="mt-10"></div>
-          </div>
-        </VCard>
-      </VCard>
-    </VDialog>
-  </VLayout>
+      Pedido #{{ lastCompletedOrderId }} está pronto!
+    </div>
+  </div>
 </template>
 
 <script setup>
-let restauranteId = null;
+import { ref, computed, onMounted, watch } from "vue";
+import api from "~/api";
 
-if (import.meta.client) {
-  restauranteId = localStorage.getItem("restauranteId");
-}
+const orders = ref([]);
+const statusFilters = ref([]);
+const typeFilter = ref("Todos os Pratos");
+const showSnackbar = ref(false);
+const snackbarFading = ref(false);
+const lastCompletedOrderId = ref(null);
+const isLoading = ref(true);
+const error = ref(null);
 
-onMounted(() => {
-  setInterval(() => {
-    $fetch("http://18.220.42.255:8000/api/pedidos/", {
-      method: "GET",
-    }).then((res) => {
-      res = res.filter((item) => item.restaurante == restauranteId);
-      pedidos.value = res.filter(
-        (item) => item.status == "Em Aberto" || item.status == "Preparando"
-      );
-    });
-  }, 5000);
-});
-const dialog_status = ref(false);
-const dialog_plate = ref(false);
-const plates_selected = ref([]);
-
-const prato = ref("");
-
-const form_pedido = ref({
-  nome_cliente: "",
-  mesa: "",
-  pratos_obj: [],
-});
-
-const dialog_fazer_pedido = ref(false);
-
-const mesas = ref([]);
-
-const pedidos = ref([]);
-
-const selected_pedido = ref({});
-
-const all_plates = ref([]);
-
-function addPrato() {
-  form_pedido.value.pratos_obj.push({
-    nome: `Prato ${prato.value}`,
+const currentDate = computed(() => {
+  return new Date().toLocaleDateString("pt-BR", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
-  prato.value = "";
-}
+});
 
-function showPlate(item) {
-  plates_selected.value = item.pratos;
-  dialog_plate.value = true;
-}
+const toggleStatusFilter = (status) => {
+  const index = statusFilters.value.indexOf(status);
+  if (index === -1) {
+    statusFilters.value.push(status);
+  } else {
+    statusFilters.value.splice(index, 1);
+  }
+};
 
-function fecharDialog() {
-  form_pedido.value = {
-    nome_cliente: "",
-    mesa: "",
-    pratos_obj: [],
-  };
-  prato.value = "";
-  dialog_fazer_pedido.value = false;
-}
+const setTypeFilter = (type) => {
+  typeFilter.value = type;
+};
 
-function changeStatus(status) {
-  $fetch(
-    `http://18.220.42.255:8000/api/pedidos/${selected_pedido.value.value.id}/`,
-    {
-      method: "PATCH",
-      body: { status: status },
+const filteredOrders = computed(() => {
+  return orders.value.filter((order) => {
+    const statusMatch =
+      statusFilters.value.length === 0 || statusFilters.value.includes(order.status);
+    const typeMatch =
+      typeFilter.value === "Todos os Pratos" ||
+      order.items.some((item) =>
+        typeFilter.value === "Prato Quente"
+          ? item.prato.tipo === "quente"
+          : item.prato.tipo === "frio"
+      );
+    return statusMatch && typeMatch;
+  });
+});
+
+const filteredOrderItems = (order) => {
+  if (typeFilter.value === "Todos os Pratos") {
+    return order.items;
+  }
+  return order.items.filter((item) =>
+    typeFilter.value === "Prato Quente"
+      ? item.prato.tipo === "quente"
+      : item.prato.tipo === "frio"
+  );
+};
+
+const formatTime = (timeString) => {
+  const [hours, minutes] = timeString.split(":");
+  return `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
+};
+
+const getStatusClass = (status) => {
+  const baseClasses = "px-2 py-1 rounded-full text-xs font-semibold";
+  switch (status) {
+    case "Em Aberto":
+      return `${baseClasses} bg-yellow-500 text-yellow-900`;
+    case "Preparando":
+      return `${baseClasses} bg-blue-500 text-blue-900`;
+    case "Pedido Pronto":
+      return `${baseClasses} bg-green-500 text-green-900`;
+    case "Em Rota":
+      return `${baseClasses} bg-purple-500 text-purple-900`;
+    case "Entregue":
+      return `${baseClasses} bg-gray-500 text-gray-900`;
+    case "Cancelado":
+      return `${baseClasses} bg-red-500 text-red-900`;
+    default:
+      return `${baseClasses} bg-gray-500 text-gray-900`;
+  }
+};
+
+const getItemStatusButtonClass = (status) => {
+  const baseClasses =
+    "w-8 h-8 rounded-full flex items-center justify-center transition duration-300 ease-in-out";
+  switch (status) {
+    case "Em Aberto":
+      return `${baseClasses} bg-yellow-500 hover:bg-yellow-600 text-yellow-900`;
+    case "Preparando":
+      return `${baseClasses} bg-blue-500 hover:bg-blue-600 text-blue-900`;
+    case "Pedido Pronto":
+      return `${baseClasses} bg-green-500 hover:bg-green-600 text-green-900`;
+    default:
+      return `${baseClasses} bg-gray-500 hover:bg-gray-600 text-gray-900`;
+  }
+};
+
+const getItemStatusIcon = (status) => {
+  switch (status) {
+    case "Em Aberto":
+      return "mdi mdi-clock-outline";
+    case "Preparando":
+      return "mdi mdi-progress-clock";
+    case "Pedido Pronto":
+      return "mdi mdi-check-bold";
+    default:
+      return "mdi mdi-help-circle-outline";
+  }
+};
+
+const updateOrderStatus = async (order) => {
+  try {
+    const response = await api(`pedidos/${order.id}/`, "PATCH", {
+      status: "Pedido Pronto",
+    });
+    if (response.status === "Pedido Pronto") {
+      api(
+        `restaurantes/${localStorage.getItem("restaurante_id")}/notificacoes/`,
+        "POST",
+        {
+          restaurante: localStorage.getItem("restaurante_id"),
+          titulo: "Pedido " + newStatus,
+          texto: `O pedido ${order.codigo} está ${newStatus}`,
+          status: "pronto",
+        }
+      );
+      order.status = "Pedido Pronto";
+      order.items.forEach((item) => (item.status = "Pedido Pronto"));
+      showSnackbarNotification(order.id);
+    } else {
+      throw new Error("Falha ao atualizar o status do pedido");
     }
-  ).then(() => {
-    $fetch("http://18.220.42.255:8000/api/pedidos/", {
-      method: "GET",
-    })
-      .then((res) => {
-        res = res.filter((item) => item.restaurante == restauranteId);
-        pedidos.value = res.filter(
-          (item) => item.status == "Em Aberto" || item.status == "Preparando"
+  } catch (error) {
+    console.error("Erro ao atualizar o status do pedido:", error);
+    alert("Ocorreu um erro ao atualizar o status do pedido. Por favor, tente novamente.");
+  }
+};
+
+const updateItemStatus = async (order, item) => {
+  const statusOrder = ["Em Aberto", "Preparando", "Pedido Pronto"];
+  const currentIndex = statusOrder.indexOf(item.status);
+  const nextIndex = (currentIndex + 1) % statusOrder.length;
+  const newStatus = statusOrder[nextIndex];
+
+  // Update only the clicked item's status locally
+  item.status = newStatus;
+
+  // Check if all items have the same status
+  const allItemsSameStatus = order.items.every((i) => i.status === newStatus);
+
+  if (allItemsSameStatus) {
+    try {
+      // Update the entire order status in the backend
+      const response = await api(`pedidos/${order.id}/`, "PATCH", {
+        status: newStatus,
+      });
+
+      if (response.status === newStatus) {
+        order.status = newStatus;
+
+        api(
+          `restaurantes/${localStorage.getItem("restaurante_id")}/notificacoes/`,
+          "POST",
+          {
+            restaurante: localStorage.getItem("restaurante_id"),
+            titulo: "Pedido " + newStatus,
+            texto: `O pedido ${order.codigo} está ${newStatus}`,
+            status: newStatus.toLowerCase().includes("pronto") ? "pronto" : "novo",
+          }
         );
-      })
-      .then(() => {
-        $fetch("http://18.220.42.255:8000/api/notificacao/", {
-          method: "POST",
-          body: {
-            restaurante: restauranteId,
-            texto: `Status pedido MESA ${selected_pedido.value.value.mesa} alterado para ${status.toUpperCase()}`,
-          },
+
+        if (newStatus === "Pedido Pronto") {
+          showSnackbarNotification(order.id);
+        }
+      } else {
+        throw new Error("Falha ao atualizar o status do pedido");
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar o status do pedido:", error);
+      alert(
+        "Ocorreu um erro ao atualizar o status do pedido. Por favor, tente novamente."
+      );
+      // Revert the local status change if the API call fails
+      item.status = statusOrder[currentIndex];
+    }
+  } else {
+    // Update order status locally based on items
+    if (order.items.some((i) => i.status === "Preparando")) {
+      order.status = "Preparando";
+    } else if (order.items.every((i) => i.status === "Pedido Pronto")) {
+      order.status = "Pedido Pronto";
+    } else {
+      order.status = "Em Aberto";
+    }
+  }
+};
+
+const showSnackbarNotification = (orderId) => {
+  lastCompletedOrderId.value = orderId;
+  showSnackbar.value = true;
+  snackbarFading.value = false;
+
+  setTimeout(() => {
+    snackbarFading.value = true;
+    setTimeout(() => {
+      showSnackbar.value = false;
+    }, 300);
+  }, 3000);
+};
+
+const logout = () => {
+  // Implement logout logic here
+  console.log("Usuário desconectado");
+};
+
+const fetchOrders = async () => {
+  isLoading.value = true;
+  error.value = null;
+
+  try {
+    const restauranteId = localStorage.getItem("restaurante_id");
+    const response = await api(`pedidos/?restaurante_id=${restauranteId}`);
+    if (Array.isArray(response)) {
+      orders.value = response.filter((order) =>
+        ["Em Aberto", "Preparando", "Pedido Pronto"].includes(order.status)
+      );
+      // Ensure each item has its own status
+      orders.value.forEach((order) => {
+        order.items.forEach((item) => {
+          if (!item.status) {
+            item.status = order.status;
+          }
         });
       });
-  });
+    } else {
+      throw new Error("Resposta da API inválida");
+    }
+  } catch (err) {
+    console.error("Erro ao carregar pedidos:", err);
+    error.value = "Ocorreu um erro ao carregar os pedidos. Por favor, tente novamente.";
+  } finally {
+    isLoading.value = false;
+  }
+};
 
-  dialog_status.value = false;
-}
+// Polling for new orders
+const pollInterval = 30000; // 30 seconds
+let pollTimer;
 
-function fazerPedido() {
-  $fetch("http://18.220.42.255:8000/api/pedidos/", {
-    method: "POST",
-    body: form_pedido.value,
-  }).then((res) => {
-    $fetch("http://18.220.42.255:8000/api/pedidos/", {
-      method: "GET",
-    }).then((res) => {
-      pedidos.value = res.filter((item) => item.restaurante == restauranteId);
-    });
-  });
+const startPolling = () => {
+  pollTimer = setInterval(fetchOrders, pollInterval);
+};
 
-  fecharDialog();
-}
+const stopPolling = () => {
+  clearInterval(pollTimer);
+};
 
-onBeforeMount(() => {
-  $fetch("http://18.220.42.255:8000/api/pedidos/", {
-    method: "GET",
-  }).then((res) => {
-    res = res.filter((item) => item.restaurante == restauranteId);
-    pedidos.value = res.filter(
-      (item) => item.status == "Em Aberto" || item.status == "Preparando"
-    );
-  });
-
-  $fetch("http://18.220.42.255:8000/api/mesas/", {
-    method: "GET",
-  }).then((res) => {
-    mesas.value = res.filter((item) => item.restaurante == restauranteId);
-  });
-
-  $fetch("http://18.220.42.255:8000/api/pratos/", {
-    method: "GET",
-  }).then((res) => {
-    res = res.filter((item) => item.restaurante == restauranteId);
-    all_plates.value = res.map((item) => item.nome);
-  });
+onMounted(() => {
+  fetchOrders();
+  startPolling();
 });
+
+onUnmounted(() => {
+  stopPolling();
+});
+
+// Watch for changes in orders and update localStorage
+watch(
+  orders,
+  () => {
+    localStorage.setItem("orders", JSON.stringify(orders.value));
+  },
+  { deep: true }
+);
 </script>
 
 <style>
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Slab:wght@300;400;500;600;700&display=swap");
+@import "https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css";
+
+:root {
+  --font-sans: "Poppins", sans-serif;
+  --font-display: "Roboto Slab", serif;
+}
+
 body {
-  background-color: black;
+  font-family: var(--font-sans);
+}
+
+.font-display {
+  font-family: var(--font-display);
 }
 </style>
