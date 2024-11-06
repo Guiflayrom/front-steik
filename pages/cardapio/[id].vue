@@ -1,7 +1,9 @@
 <template>
   <div class="min-h-screen bg-gray-900 text-gray-100 font-sans">
     <div class="container mx-auto px-4 py-8">
-      <h1 class="text-4xl font-bold mb-8 text-center font-display mt-15 sm:mt-0">
+      <h1
+        class="text-4xl font-bold mb-8 text-center font-display mt-15 sm:mt-0"
+      >
         Cardápio
       </h1>
 
@@ -13,7 +15,9 @@
             class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out"
             v-if="!mobile"
           >
-            <i :class="isGridView ? 'mdi mdi-view-list' : 'mdi mdi-view-grid'"></i>
+            <i
+              :class="isGridView ? 'mdi mdi-view-list' : 'mdi mdi-view-grid'"
+            ></i>
             {{ isGridView ? "Visualização em Lista" : "Visualização em Grade" }}
           </button>
           <select
@@ -21,7 +25,11 @@
             class="bg-gray-800 text-white rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
           >
             <option value="">Todas as Categorias</option>
-            <option v-for="category in categories" :key="category" :value="category">
+            <option
+              v-for="category in categories"
+              :key="category"
+              :value="category"
+            >
               {{ category }}
             </option>
           </select>
@@ -55,7 +63,9 @@
           Nenhum item favorito encontrado
           {{ selectedCategory ? "nesta categoria" : "" }}.
         </p>
-        <p class="mt-2">Adicione itens aos favoritos ou selecione outra categoria.</p>
+        <p class="mt-2">
+          Adicione itens aos favoritos ou selecione outra categoria.
+        </p>
       </div>
 
       <!-- Menu Items -->
@@ -73,7 +83,10 @@
           :class="{ 'h-[400px]': isGridView, 'h-[200px]': !isGridView }"
           @mouseenter="playHoverSound"
         >
-          <div class="flip-card-inner" :class="{ 'is-flipped': item.isFlipped }">
+          <div
+            class="flip-card-inner"
+            :class="{ 'is-flipped': item.isFlipped }"
+          >
             <!-- Front of the card -->
             <div
               class="flip-card-front bg-gray-800 rounded-lg shadow-lg overflow-hidden relative"
@@ -96,12 +109,18 @@
                   "
                 ></i>
               </button>
-              <img :src="item.imagem" :alt="item.nome" class="w-full h-48 object-cover" />
+              <img
+                :src="item.imagem"
+                :alt="item.nome"
+                class="w-full h-48 object-cover"
+              />
               <div class="p-4">
                 <div class="flex justify-between items-start mb-2">
                   <h3 class="text-xl font-semibold">{{ item.nome }}</h3>
                   <div class="flex items-center">
-                    <span class="text-yellow-400 mr-1">{{ item.rating.toFixed(1) }}</span>
+                    <span class="text-yellow-400 mr-1">{{
+                      item.rating.toFixed(1)
+                    }}</span>
                     <i class="mdi mdi-star text-yellow-400"></i>
                   </div>
                 </div>
@@ -149,7 +168,8 @@
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <h4 class="font-semibold mb-2 flex items-center">
-                      <i class="mdi mdi-food-variant mr-2 text-blue-400"></i>Ingredientes
+                      <i class="mdi mdi-food-variant mr-2 text-blue-400"></i
+                      >Ingredientes
                     </h4>
                     <ul class="text-sm">
                       <li
@@ -164,8 +184,8 @@
 
                   <div>
                     <h4 class="font-semibold mb-2 flex items-center">
-                      <i class="mdi mdi-scale-bathroom mr-2 text-green-400"></i>Info
-                      Nutricional
+                      <i class="mdi mdi-scale-bathroom mr-2 text-green-400"></i
+                      >Info Nutricional
                     </h4>
                     <ul class="text-sm">
                       <li class="flex justify-between mb-1">
@@ -190,7 +210,8 @@
 
                 <div class="mt-4">
                   <h4 class="font-semibold mb-2 flex items-center">
-                    <i class="mdi mdi-alert-circle mr-2 text-yellow-400"></i>Alergênicos
+                    <i class="mdi mdi-alert-circle mr-2 text-yellow-400"></i
+                    >Alergênicos
                   </h4>
                   <p class="text-sm">
                     {{ item.alergenicos || "Nenhum alergênico conhecido" }}
@@ -275,7 +296,9 @@
                 </div>
               </div>
               <div class="flex items-center">
-                <span class="mr-4">R$ {{ (item.valor * item.qtd).toFixed(2) }}</span>
+                <span class="mr-4"
+                  >R$ {{ (item.valor * item.qtd).toFixed(2) }}</span
+                >
                 <button
                   @click="removeFromCart(item)"
                   class="text-red-500 hover:text-red-600"
@@ -285,7 +308,10 @@
               </div>
             </li>
           </ul>
-          <div v-if="cart.length > 0" class="border-t border-gray-700 pt-4 mb-4">
+          <div
+            v-if="cart.length > 0"
+            class="border-t border-gray-700 pt-4 mb-4"
+          >
             <div class="flex justify-between items-center font-bold">
               <span>Total:</span>
               <span>R$ {{ cartTotal.toFixed(2) }}</span>
@@ -321,9 +347,13 @@
             <i class="mdi mdi-loading mdi-spin text-4xl"></i>
             <p class="mt-2">Carregando mesas disponíveis...</p>
           </div>
-          <div v-else-if="availableTables.length === 0" class="text-center py-4">
+          <div
+            v-else-if="availableTables.length === 0"
+            class="text-center py-4"
+          >
             <p>
-              Não há mesas disponíveis no momento. Por favor, tente novamente mais tarde.
+              Não há mesas disponíveis no momento. Por favor, tente novamente
+              mais tarde.
             </p>
           </div>
           <div v-else class="grid grid-cols-3 gap-4 mb-4">
@@ -386,7 +416,10 @@
           class="bg-gray-800 rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto"
         >
           <h2 class="text-2xl font-bold mb-4">Seus Pedidos</h2>
-          <div v-if="orders.length === 0" class="text-center text-gray-400 my-4">
+          <div
+            v-if="orders.length === 0"
+            class="text-center text-gray-400 my-4"
+          >
             Você ainda não fez nenhum pedido.
           </div>
           <div v-else class="space-y-6">
@@ -396,7 +429,9 @@
               class="bg-gray-700 rounded-lg p-4"
             >
               <div class="flex justify-between items-center mb-2">
-                <h3 class="text-xl font-semibold">Pedido #{{ order.codigo }}</h3>
+                <h3 class="text-xl font-semibold">
+                  Pedido #{{ order.codigo }}
+                </h3>
                 <span
                   :class="{
                     'text-yellow-500': order.status === 'Pendente',
@@ -436,7 +471,11 @@
       </div>
 
       <!-- Fly to Cart Animation Element -->
-      <div v-if="showFlyAnimation" class="fly-to-cart-item" :style="flyAnimationStyles">
+      <div
+        v-if="showFlyAnimation"
+        class="fly-to-cart-item"
+        :style="flyAnimationStyles"
+      >
         <i class="mdi mdi-cart-plus text-2xl text-white"></i>
       </div>
     </div>
@@ -477,35 +516,6 @@ const isLoadingTables = ref(false);
 let hoverSound;
 let addToCartSound;
 
-onMounted(async () => {
-  try {
-    const restauranteId = localStorage.getItem("restaurante_id");
-    const response = await api(`restaurantes/${restauranteId}/pratos/`);
-    menuItems.value = response.map((item) => ({
-      ...item,
-      isFavorite: false,
-      isFlipped: false,
-      ingredientes: item.ingredientes ? item.ingredientes.split(",") : [],
-      rating: 4.5, // Default rating since it's not provided by the API
-    }));
-  } catch (error) {
-    console.error("Erro ao buscar itens do menu:", error);
-  }
-
-  hoverSound = new Audio("/path/to/hover-sound.mp3");
-  addToCartSound = new Audio("/path/to/add-to-cart-sound.mp3");
-
-  // Load favorites from localStorage
-  const savedFavorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-  menuItems.value.forEach((item) => {
-    item.isFavorite = savedFavorites.includes(item.id);
-  });
-
-  // Load orders from localStorage
-  const savedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-  orders.value = savedOrders;
-});
-
 // Computed properties
 const categories = computed(() => {
   return [...new Set(menuItems.value.map((item) => item.categoria_nome))];
@@ -519,7 +529,9 @@ const filteredAndSortedItems = computed(() => {
   }
 
   if (selectedCategory.value) {
-    items = items.filter((item) => item.categoria_nome === selectedCategory.value);
+    items = items.filter(
+      (item) => item.categoria_nome === selectedCategory.value
+    );
   }
 
   items = items.sort((a, b) => {
@@ -564,6 +576,9 @@ const flipCard = (item) => {
   item.isFlipped = !item.isFlipped;
 };
 
+const route = useRoute();
+const restauranteId = route.params.id;
+
 const addToCartWithAnimation = (item, event) => {
   // Get the position of the clicked button
   const rect = event.target.getBoundingClientRect();
@@ -571,7 +586,9 @@ const addToCartWithAnimation = (item, event) => {
   const startY = rect.top + rect.height / 2;
 
   // Get the position of the cart button
-  const cartButton = document.querySelector(".fixed.top-4.right-4 button:last-child");
+  const cartButton = document.querySelector(
+    ".fixed.top-4.right-4 button:last-child"
+  );
   const cartRect = cartButton.getBoundingClientRect();
   const endX = cartRect.left + cartRect.width / 2;
   const endY = cartRect.top + cartRect.height / 2;
@@ -654,10 +671,10 @@ const startOrderProcess = async () => {
   showTableSelection.value = true;
 
   try {
-    const restauranteId = localStorage.getItem("restaurante_id");
     const response = await api(`mesas/`);
     availableTables.value = response.filter(
-      (table) => table.status == "Disponível" && table.restaurante == restauranteId
+      (table) =>
+        table.status == "Disponível" && table.restaurante == restauranteId
     );
   } catch (error) {
     console.error("Erro ao buscar mesas disponíveis:", error);
@@ -689,13 +706,13 @@ const showOrderConfirmation = () => {
     codigo: currentOrderCode.value,
     items: [...cart.value],
     total: cartTotal.value,
-    status: "Em Aberto",
+    status: "Em Confirmacao",
     mesa: selectedTable.value.numero_mesa,
-    restaurante: localStorage.getItem("restaurante_id"),
+    restaurante: restauranteId,
   };
   api("pedidos/", "POST", newOrder).then((res) => {
-    api(`restaurantes/${localStorage.getItem("restaurante_id")}/notificacoes/`, "POST", {
-      restaurante: localStorage.getItem("restaurante_id"),
+    api(`restaurantes/${restauranteId}/notificacoes/`, "POST", {
+      restaurante: restauranteId,
       titulo: "Novo pedido",
       texto: `Um cliente fez um pedido na mesa ${selectedTable.value.numero_mesa}, código: ${currentOrderCode.value}`,
       status: "aviso",
@@ -716,7 +733,33 @@ const generateOrderCode = () => {
   return Math.random().toString(36).substr(2, 6).toUpperCase();
 };
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const response = await api(`restaurantes/${restauranteId}/pratos/`);
+    menuItems.value = response.map((item) => ({
+      ...item,
+      isFavorite: false,
+      isFlipped: false,
+      ingredientes: item.ingredientes ? item.ingredientes.split(",") : [],
+      rating: 4.5, // Default rating since it's not provided by the API
+    }));
+  } catch (error) {
+    console.error("Erro ao buscar itens do menu:", error);
+  }
+
+  hoverSound = new Audio("/path/to/hover-sound.mp3");
+  addToCartSound = new Audio("/path/to/add-to-cart-sound.mp3");
+
+  // Load favorites from localStorage
+  const savedFavorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+  menuItems.value.forEach((item) => {
+    item.isFavorite = savedFavorites.includes(item.id);
+  });
+
+  // Load orders from localStorage
+  const savedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+  orders.value = savedOrders;
+
   // Simulating order status changes (you can replace this with real-time updates from a backend)
   setInterval(() => {
     orders.value = orders.value.map((order) => {

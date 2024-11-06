@@ -61,7 +61,9 @@
       <!-- Error State -->
       <div v-else-if="error" class="bg-red-500 text-white p-4 rounded-lg">
         <p>{{ error }}</p>
-        <button @click="fetchOrders" class="mt-2 underline">Tentar novamente</button>
+        <button @click="fetchOrders" class="mt-2 underline">
+          Tentar novamente
+        </button>
       </div>
 
       <!-- Orders Grid -->
@@ -84,7 +86,9 @@
                 :title="order.is_delivery ? 'Entrega' : 'Mesa'"
               ></i>
             </div>
-            <span :class="getStatusClass(order.status)">{{ order.status }}</span>
+            <span :class="getStatusClass(order.status)">{{
+              order.status
+            }}</span>
           </div>
           <div class="mb-4">
             <p class="text-sm text-gray-400">
@@ -93,7 +97,9 @@
             </p>
             <p v-if="order.is_delivery" class="text-sm text-gray-400">
               Endereço:
-              {{ `${order.pessoa?.endereco}, ${order.pessoa?.numero}` || "N/A" }}
+              {{
+                `${order.pessoa?.endereco}, ${order.pessoa?.numero}` || "N/A"
+              }}
             </p>
           </div>
           <ul class="space-y-4 mb-4">
@@ -190,7 +196,8 @@ const setTypeFilter = (type) => {
 const filteredOrders = computed(() => {
   return orders.value.filter((order) => {
     const statusMatch =
-      statusFilters.value.length === 0 || statusFilters.value.includes(order.status);
+      statusFilters.value.length === 0 ||
+      statusFilters.value.includes(order.status);
     const typeMatch =
       typeFilter.value === "Todos os Pratos" ||
       order.items.some((item) =>
@@ -290,7 +297,9 @@ const updateOrderStatus = async (order) => {
     }
   } catch (error) {
     console.error("Erro ao atualizar o status do pedido:", error);
-    alert("Ocorreu um erro ao atualizar o status do pedido. Por favor, tente novamente.");
+    alert(
+      "Ocorreu um erro ao atualizar o status do pedido. Por favor, tente novamente."
+    );
   }
 };
 
@@ -323,7 +332,9 @@ const updateItemStatus = async (order, item) => {
             restaurante: localStorage.getItem("restaurante_id"),
             titulo: "Pedido " + newStatus,
             texto: `O pedido ${order.codigo} está ${newStatus}`,
-            status: newStatus.toLowerCase().includes("pronto") ? "pronto" : "novo",
+            status: newStatus.toLowerCase().includes("pronto")
+              ? "pronto"
+              : "novo",
           }
         );
 
@@ -375,12 +386,21 @@ const fetchOrders = async () => {
   isLoading.value = true;
   error.value = null;
 
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0"); // getMonth() retorna de 0 a 11, então adicionamos 1
+  const day = String(today.getDate()).padStart(2, "0");
+
+  const formattedDate = `${year}-${month}-${day}`;
+
   try {
     const restauranteId = localStorage.getItem("restaurante_id");
     const response = await api(`pedidos/?restaurante_id=${restauranteId}`);
     if (Array.isArray(response)) {
-      orders.value = response.filter((order) =>
-        ["Em Aberto", "Preparando", "Pedido Pronto"].includes(order.status)
+      orders.value = response.filter(
+        (order) =>
+          ["Em Aberto", "Preparando", "Pedido Pronto"].includes(order.status) &&
+          order.data_pedido == formattedDate
       );
       // Ensure each item has its own status
       orders.value.forEach((order) => {
@@ -395,7 +415,8 @@ const fetchOrders = async () => {
     }
   } catch (err) {
     console.error("Erro ao carregar pedidos:", err);
-    error.value = "Ocorreu um erro ao carregar os pedidos. Por favor, tente novamente.";
+    error.value =
+      "Ocorreu um erro ao carregar os pedidos. Por favor, tente novamente.";
   } finally {
     isLoading.value = false;
   }

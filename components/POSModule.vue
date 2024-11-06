@@ -11,7 +11,9 @@
         <h2 class="text-2xl font-bold mb-4">Abertura de Caixa</h2>
         <div class="space-y-4">
           <div>
-            <label for="initialBalance" class="block text-sm font-medium text-gray-400"
+            <label
+              for="initialBalance"
+              class="block text-sm font-medium text-gray-400"
               >Saldo Inicial</label
             >
             <div class="mt-1 relative rounded-md shadow-sm">
@@ -34,7 +36,9 @@
           <div>
             <p class="text-sm text-gray-400">Operador: {{ operatorName }}</p>
             <p class="text-sm text-gray-400">Função: {{ operatorRole }}</p>
-            <p class="text-sm text-gray-400">Início do turno: {{ shiftStartTime }}</p>
+            <p class="text-sm text-gray-400">
+              Início do turno: {{ shiftStartTime }}
+            </p>
           </div>
           <button
             @click="confirmOpeningBalance"
@@ -102,7 +106,39 @@
 
         <!-- Vendas Tab -->
         <div v-if="activeTab === 'vendas'">
-          <!-- ... (previous code for item search remains unchanged) ... -->
+          <div class="mb-4">
+            <label
+              for="itemSearch"
+              class="block text-sm font-medium text-gray-400"
+              >Adicionar Item</label
+            >
+            <div class="relative">
+              <input
+                type="text"
+                id="itemSearch"
+                v-model="itemSearch"
+                @focus="showDropdown"
+                @input="searchItems"
+                class="mt-1 bg-gray-700 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-600 rounded-md"
+                placeholder="Pesquisar item..."
+              />
+              <div
+                v-if="isDropdownVisible && searchResults.length > 0"
+                class="absolute z-10 w-full mt-1 bg-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto"
+              >
+                <ul class="py-1">
+                  <li
+                    v-for="item in searchResults"
+                    :key="item.id"
+                    @click="addItemToOrder(item)"
+                    class="px-4 py-2 hover:bg-gray-600 cursor-pointer"
+                  >
+                    {{ item.nome }} - R$ {{ item.valor.toFixed(2) }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
           <div class="overflow-x-auto h-64 overflow-y-auto">
             <table class="min-w-full divide-y divide-gray-700">
               <thead class="bg-gray-700 sticky top-0">
@@ -179,7 +215,9 @@
           <h2 class="text-xl font-bold mb-4">Registrar Despesa</h2>
           <div class="space-y-4">
             <div>
-              <label for="expenseAmount" class="block text-sm font-medium text-gray-400"
+              <label
+                for="expenseAmount"
+                class="block text-sm font-medium text-gray-400"
                 >Valor da Despesa</label
               >
               <div class="mt-1 relative rounded-md shadow-sm">
@@ -213,7 +251,9 @@
               />
             </div>
             <div>
-              <label for="expenseCategory" class="block text-sm font-medium text-gray-400"
+              <label
+                for="expenseCategory"
+                class="block text-sm font-medium text-gray-400"
                 >Categoria</label
               >
               <select
@@ -276,7 +316,9 @@
           <h2 class="text-xl font-bold mb-4">Registrar Acréscimo</h2>
           <div class="space-y-4">
             <div>
-              <label for="addtionAmount" class="block text-sm font-medium text-gray-400"
+              <label
+                for="addtionAmount"
+                class="block text-sm font-medium text-gray-400"
                 >Valor do Acréscimo</label
               >
               <div class="mt-1 relative rounded-md shadow-sm">
@@ -310,7 +352,9 @@
               />
             </div>
             <div>
-              <label for="addtionCategory" class="block text-sm font-medium text-gray-400"
+              <label
+                for="addtionCategory"
+                class="block text-sm font-medium text-gray-400"
                 >Categoria</label
               >
               <select
@@ -389,14 +433,18 @@
             <span>Total Pago:</span>
             <span>R$ {{ totalPaid.toFixed(2) }}</span>
           </div>
-          <div class="flex justify-between items-center text-sm text-yellow-500">
+          <div
+            class="flex justify-between items-center text-sm text-yellow-500"
+          >
             <span>Troco:</span>
             <span>R$ {{ change.toFixed(2) }}</span>
           </div>
         </div>
 
         <div class="mb-4">
-          <label for="discountType" class="block text-sm font-medium text-gray-400"
+          <label
+            for="discountType"
+            class="block text-sm font-medium text-gray-400"
             >Tipo de Desconto</label
           >
           <select
@@ -410,7 +458,10 @@
           </select>
         </div>
         <div v-if="discountType !== 'none'" class="mb-4">
-          <label for="discountValue" class="block text-sm font-medium text-gray-400">
+          <label
+            for="discountValue"
+            class="block text-sm font-medium text-gray-400"
+          >
             {{
               discountType === "percentage"
                 ? "Porcentagem de Desconto"
@@ -444,6 +495,13 @@
         </div>
 
         <div class="mb-4">
+          <div class="flex items-center space-x-2 mb-2">
+            <h3 class="text-lg font-semibold">Emitir Nota?</h3>
+            <input type="checkbox" name="checkbox" id="" />
+          </div>
+        </div>
+
+        <div class="mb-4">
           <h3 class="text-lg font-semibold mb-2">Métodos de Pagamento</h3>
           <div class="h-32 overflow-y-auto">
             <div
@@ -455,7 +513,11 @@
                 v-model="payment.metodo"
                 class="bg-gray-700 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-600 rounded-md"
               >
-                <option v-for="metodo in paymentMethods" :key="metodo" :value="metodo">
+                <option
+                  v-for="metodo in paymentMethods"
+                  :key="metodo"
+                  :value="metodo"
+                >
                   {{ metodo }}
                 </option>
               </select>
@@ -484,10 +546,94 @@
         </div>
 
         <button
-          @click="finalizeSale"
+          @click="showConfirmationModal"
           class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
         >
           Finalizar Venda (F7)
+        </button>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div
+      v-if="showConfirmation"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+        <h2 class="text-2xl font-bold mb-4">Confirmar Venda</h2>
+        <div class="space-y-4">
+          <div class="text-center">
+            <p class="text-lg mb-2">Total a Pagar:</p>
+            <p class="text-4xl font-bold text-green-500">
+              R$ {{ orderTotal.toFixed(2) }}
+            </p>
+          </div>
+          <div>
+            <h3 class="font-semibold mb-2">Itens do Pedido:</h3>
+            <ul class="list-disc list-inside">
+              <li v-for="item in currentOrder" :key="item.id">
+                {{ item.nome }} - {{ item.quantity }}x - R$
+                {{ (item.valor * item.quantity).toFixed(2) }}
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="font-semibold mb-2">Métodos de Pagamento:</h3>
+            <ul class="list-disc list-inside">
+              <li v-for="(payment, index) in payments" :key="index">
+                {{ payment.metodo }} - R$ {{ payment.valor.toFixed(2) }}
+              </li>
+            </ul>
+          </div>
+          <div class="flex justify-between">
+            <span>Troco:</span>
+            <span>R$ {{ change.toFixed(2) }}</span>
+          </div>
+          <div class="flex justify-end space-x-4">
+            <button
+              @click="showConfirmation = false"
+              class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300"
+            >
+              Cancelar
+            </button>
+            <button
+              @click="finalizeSale"
+              class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300"
+            >
+              Confirmar Venda
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div
+      v-if="isLoading"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md text-center">
+        <div
+          class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-green-500 mx-auto mb-4"
+        ></div>
+        <p class="text-xl font-semibold">Processando compra...</p>
+      </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div
+      v-if="showSuccess"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md text-center">
+        <i class="mdi mdi-check-circle text-6xl text-green-500 mb-4"></i>
+        <h2 class="text-2xl font-bold mb-4">Venda Finalizada com Sucesso!</h2>
+        <p class="mb-4">Obrigado pela compra.</p>
+        <button
+          @click="closeSuccessModal"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300"
+        >
+          Fechar
         </button>
       </div>
     </div>
@@ -508,6 +654,11 @@ const operatorRole = ref("Caixa");
 const isDropdownVisible = ref(false);
 const shiftStartTime = ref(new Date().toLocaleTimeString());
 const allOrders = ref([]);
+
+// New state variables
+const showConfirmation = ref(false);
+const isLoading = ref(false);
+const showSuccess = ref(false);
 
 const confirmOpeningBalance = () => {
   showOpeningModal.value = false;
@@ -576,7 +727,7 @@ const activeTab = ref("vendas");
 // Sales Interface
 const itemSearch = ref("");
 const searchResults = ref([]);
-const menuItems = [];
+const menuItems = ref([]);
 const currentOrder = ref([]);
 
 const showAllProducts = () => {
@@ -591,20 +742,6 @@ const searchItems = () => {
   } else {
     searchResults.value = [];
   }
-};
-const clickOutside = {
-  beforeMount(el, binding) {
-    el.clickOutsideEvent = (event) => {
-      // Check if the click is outside the element and if the dropdown is visible
-      if (!el.contains(event.target) && binding.instance.isDropdownVisible) {
-        binding.value(event);
-      }
-    };
-    document.addEventListener("click", el.clickOutsideEvent);
-  },
-  unmounted(el) {
-    document.removeEventListener("click", el.clickOutsideEvent);
-  },
 };
 
 const showDropdown = () => {
@@ -628,7 +765,8 @@ onMounted(() => {
   document.addEventListener("click", handleClickOutside);
 
   api(
-    "restaurantes/caixas/aberto/?restaurante_id=" + localStorage.getItem("restaurante_id")
+    "restaurantes/caixas/aberto/?restaurante_id=" +
+      localStorage.getItem("restaurante_id")
   )
     .then((res) => {
       localStorage.setItem("caixa_aberto_id", res.caixa_aberto_id);
@@ -636,10 +774,12 @@ onMounted(() => {
     })
     .catch(() => {});
 
-  api(`restaurantes/${localStorage.getItem("restaurante_id")}/pratos/`).then((res) => {
-    menuItems.value = res;
-    showAllProducts();
-  });
+  api(`restaurantes/${localStorage.getItem("restaurante_id")}/pratos/`).then(
+    (res) => {
+      menuItems.value = res;
+      showAllProducts();
+    }
+  );
 
   api("acrescimos/").then((res) => {
     additions.value = res.filter(
@@ -655,7 +795,9 @@ onMounted(() => {
 });
 
 const addItemToOrder = (item) => {
-  const existingItem = currentOrder.value.find((orderItem) => orderItem.id === item.id);
+  const existingItem = currentOrder.value.find(
+    (orderItem) => orderItem.id === item.id
+  );
   if (existingItem) {
     existingItem.quantity += 1;
   } else {
@@ -718,7 +860,10 @@ const removePayment = (index) => {
 };
 
 const totalPaid = computed(() => {
-  return payments.value.reduce((total, payment) => total + Number(payment.valor), 0);
+  return payments.value.reduce(
+    (total, payment) => total + Number(payment.valor),
+    0
+  );
 });
 
 const change = computed(() => {
@@ -738,12 +883,12 @@ const mapPaymentMethods = (payments) => {
   return payments.map((payment) => {
     return {
       ...payment,
-      metodo: paymentMethodsMapping[payment.metodo] || payment.metodo, // Map the method or keep it as is
+      metodo: paymentMethodsMapping[payment.metodo] || payment.metodo,
     };
   });
 };
 
-const finalizeSale = () => {
+const showConfirmationModal = () => {
   if (currentOrder.value.length === 0) {
     alert("Adicione itens ao pedido antes de finalizar a venda.");
     return;
@@ -752,50 +897,56 @@ const finalizeSale = () => {
     alert("O valor pago é menor que o total do pedido.");
     return;
   }
+  showConfirmation.value = true;
+};
 
-  // Here you would typically send the order to your backend and print a receipt
-  console.log("Venda finalizada");
-  console.log("Itens:", currentOrder.value);
-  console.log("Subtotal:", subtotal.value);
-  console.log("Desconto:", totalDiscount.value);
-  console.log("Total:", orderTotal.value);
-  console.log("Pagamentos:", payments.value);
-  console.log("Troco:", change.value);
+const finalizeSale = () => {
+  showConfirmation.value = false;
+  isLoading.value = true;
 
-  if (orderSearch.value != "" && lastFounded.value != null) {
-    api("pedidos/" + lastFounded.value.id + "/", "PATCH", {
-      caixa: localStorage.getItem("caixa_aberto_id"),
-      pagamentos: mapPaymentMethods(payments.value),
-      valor_pago: parseFloat(totalPaid.value).toFixed(2),
-      troco: change.value.toFixed(2),
-      desconto: totalDiscount.value.toFixed(2),
-      subtotal: subtotal.value.toFixed(2),
-      status: "Fechado",
-      items: currentOrder.value.map((item) => {
-        return { id: item.id, qtd: item.quantity };
-      }),
-    });
-    orderSearch.value = "";
-    lastFounded.value = null;
-  } else {
-    api("pedidos/", "POST", {
-      caixa: localStorage.getItem("caixa_aberto_id"),
-      pagamentos: mapPaymentMethods(payments.value),
-      valor_pago: parseFloat(totalPaid.value),
-      troco: change.value.toFixed(2),
-      desconto: totalDiscount.value.toFixed(2),
-      subtotal: subtotal.value.toFixed(2),
-      items: currentOrder.value.map((item) => {
-        return { id: item.id, qtd: item.quantity };
-      }),
-    });
-  }
+  setTimeout(() => {
+    if (orderSearch.value != "" && lastFounded.value != null) {
+      api("pedidos/" + lastFounded.value.id + "/", "PATCH", {
+        caixa: localStorage.getItem("caixa_aberto_id"),
+        pagamentos: mapPaymentMethods(payments.value),
+        valor_pago: parseFloat(totalPaid.value).toFixed(2),
+        troco: change.value.toFixed(2),
+        desconto: totalDiscount.value.toFixed(2),
+        subtotal: subtotal.value.toFixed(2),
+        status: "Fechado",
+        items: currentOrder.value.map((item) => {
+          return { id: item.id, qtd: item.quantity };
+        }),
+      });
+      orderSearch.value = "";
+      lastFounded.value = null;
+    } else {
+      api("pedidos/", "POST", {
+        caixa: localStorage.getItem("caixa_aberto_id"),
+        pagamentos: mapPaymentMethods(payments.value),
+        valor_pago: parseFloat(totalPaid.value),
+        troco: change.value.toFixed(2),
+        desconto: totalDiscount.value.toFixed(2),
+        subtotal: subtotal.value.toFixed(2),
+        items: currentOrder.value.map((item) => {
+          return { id: item.id, qtd: item.quantity };
+        }),
+      });
+    }
 
-  // Reset the order
-  currentOrder.value = [];
-  payments.value = [{ metodo: "", valor: 0 }];
-  discountType.value = "none";
-  discountValue.value = 0;
+    isLoading.value = false;
+    showSuccess.value = true;
+
+    // Reset the order
+    currentOrder.value = [];
+    payments.value = [{ metodo: "", valor: 0 }];
+    discountType.value = "none";
+    discountValue.value = 0;
+  }, 5000);
+};
+
+const closeSuccessModal = () => {
+  showSuccess.value = false;
 };
 
 // Expense Logging
@@ -879,7 +1030,7 @@ const logExpense = () => {
 const handleKeyPress = (event) => {
   if (event.key === "F7") {
     event.preventDefault();
-    finalizeSale();
+    showConfirmationModal();
   }
 };
 

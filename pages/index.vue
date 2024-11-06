@@ -91,7 +91,9 @@ const allModules = ref([
 const filteredModules = computed(() => {
   return allModules.value.filter((module) => {
     if (!module.accessKey) return true; // Always show modules without access key (like Cardápio)
-    access_i.value = localStorage.getItem(module.accessKey);
+    try {
+      access_i.value = localStorage.getItem(module.accessKey);
+    } catch {}
     const access = access_i.value;
     return access === "true";
   });

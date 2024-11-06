@@ -29,7 +29,9 @@
     <!-- Header -->
     <header class="bg-gray-800 shadow-lg p-4">
       <div class="container mx-auto flex justify-between items-center">
-        <h1 class="text-xl md:text-2xl font-bold font-display">Garçom Steik SBS</h1>
+        <h1 class="text-xl md:text-2xl font-bold font-display">
+          Garçom Steik SBS
+        </h1>
         <div class="flex items-center space-x-2 md:space-x-4">
           <button
             @click="logout"
@@ -81,10 +83,13 @@
       <div v-if="currentTab === 'main'">
         <!-- Table Selection -->
         <div class="mb-6 md:mb-8">
-          <h2 class="text-xl md:text-2xl font-semibold mb-4">Selecionar Mesa</h2>
-          <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
+          <h2 class="text-xl md:text-2xl font-semibold mb-4">
+            Selecionar Mesa
+          </h2>
+          <div
+            class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4"
+          >
             <button
-              :disabled="table.status == 'Ocupada'"
               v-for="table in tables"
               :key="table.numero_mesa"
               @click="selectTable(table)"
@@ -101,7 +106,10 @@
         </div>
 
         <!-- Order Management -->
-        <div v-if="selectedTable" class="bg-gray-800 rounded-xl p-4 md:p-6 shadow-lg">
+        <div
+          v-if="selectedTable"
+          class="bg-gray-800 rounded-xl p-4 md:p-6 shadow-lg"
+        >
           <h3 class="text-lg md:text-xl font-semibold mb-4">
             Pedido - Mesa {{ selectedTable.numero_mesa }}
           </h3>
@@ -127,7 +135,29 @@
           <div v-if="orderTab === 'current'">
             <!-- Product Selection -->
             <div class="mb-6">
-              <h4 class="text-base md:text-lg font-semibold mb-2">Adicionar Itens</h4>
+              <h4 class="text-base md:text-lg font-semibold mb-2">
+                Confirmar Pedido
+              </h4>
+              <div
+                class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 mb-4"
+              >
+                <input
+                  v-model="pedidoSearch"
+                  type="text"
+                  placeholder="Buscar pedido"
+                  class="flex-grow px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+                />
+                <button
+                  @click="buscarPedido()"
+                  class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg transition duration-300 ease-in-out text-sm md:text-base"
+                >
+                  <i class="mdi mdi-plus mr-1 md:mr-2"></i>Adicionar
+                </button>
+              </div>
+              <div class="my-5">ou</div>
+              <h4 class="text-base md:text-lg font-semibold mb-2">
+                Adicionar Itens
+              </h4>
               <div
                 class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 mb-4"
               >
@@ -167,7 +197,9 @@
 
             <!-- Current Order -->
             <div class="mb-6">
-              <h4 class="text-base md:text-lg font-semibold mb-2">Itens do Pedido</h4>
+              <h4 class="text-base md:text-lg font-semibold mb-2">
+                Itens do Pedido
+              </h4>
               <ul class="space-y-2">
                 <li
                   v-for="item in currentOrder"
@@ -175,8 +207,8 @@
                   class="flex justify-between items-center bg-gray-700 p-2 md:p-3 rounded-lg"
                 >
                   <span class="text-sm md:text-base"
-                    >{{ item.quantity }}x {{ item.nome }} - R$
-                    {{ (item.valor * item.quantity).toFixed(2) }}</span
+                    >{{ item.qtd }}x {{ item.nome }} - R$
+                    {{ (item.valor * item.qtd).toFixed(2) }}</span
                   >
                   <div class="flex items-center space-x-1 md:space-x-2">
                     <button
@@ -204,8 +236,12 @@
 
             <!-- Order Total -->
             <div class="mb-6">
-              <h4 class="text-base md:text-lg font-semibold mb-2">Total do Pedido</h4>
-              <p class="text-xl md:text-2xl font-bold">R$ {{ orderTotal.toFixed(2) }}</p>
+              <h4 class="text-base md:text-lg font-semibold mb-2">
+                Total do Pedido
+              </h4>
+              <p class="text-xl md:text-2xl font-bold">
+                R$ {{ orderTotal.toFixed(2) }}
+              </p>
             </div>
 
             <!-- Order Actions -->
@@ -234,8 +270,13 @@
           </div>
 
           <!-- Order History Tab Content -->
-          <div v-else-if="orderTab === 'history'" class="bg-gray-700 rounded-lg p-4">
-            <h4 class="text-base md:text-lg font-semibold mb-2">Histórico de Pedidos</h4>
+          <div
+            v-else-if="orderTab === 'history'"
+            class="bg-gray-700 rounded-lg p-4"
+          >
+            <h4 class="text-base md:text-lg font-semibold mb-2">
+              Histórico de Pedidos
+            </h4>
             <div class="h-64 overflow-y-auto">
               <table class="w-full">
                 <thead>
@@ -267,7 +308,10 @@
       <!-- Notifications Screen -->
       <div v-else-if="currentTab === 'notifications'">
         <h2 class="text-xl md:text-2xl font-semibold mb-4">Notificações</h2>
-        <div v-if="notifications.length === 0" class="text-center text-gray-400 py-8">
+        <div
+          v-if="notifications.length === 0"
+          class="text-center text-gray-400 py-8"
+        >
           <i class="mdi mdi-bell-off text-6xl mb-4"></i>
           <p class="text-xl">Nenhuma notificação no momento</p>
         </div>
@@ -286,7 +330,9 @@
               }}</span>
             </div>
             <p class="text-sm md:text-base mb-2">{{ notification.texto }}</p>
-            <div class="flex justify-between items-center text-sm text-gray-400">
+            <div
+              class="flex justify-between items-center text-sm text-gray-400"
+            >
               <!-- <span>Mesa: {{ notification.table }}</span> -->
               <span
                 >{{ notification.horario.split(":")[0] }}:{{
@@ -311,10 +357,14 @@
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
     >
       <div class="bg-gray-800 rounded-xl p-4 md:p-6 w-full max-w-md">
-        <h3 class="text-lg md:text-xl font-semibold mb-4">Adicionar Novo Produto</h3>
+        <h3 class="text-lg md:text-xl font-semibold mb-4">
+          Adicionar Novo Produto
+        </h3>
         <form @submit.prevent="addNewProduct" class="space-y-4">
           <div>
-            <label for="productName" class="block text-sm font-medium text-gray-300 mb-1"
+            <label
+              for="productName"
+              class="block text-sm font-medium text-gray-300 mb-1"
               >Nome do Produto</label
             >
             <input
@@ -326,7 +376,9 @@
             />
           </div>
           <div>
-            <label for="productPrice" class="block text-sm font-medium text-gray-300 mb-1"
+            <label
+              for="productPrice"
+              class="block text-sm font-medium text-gray-300 mb-1"
               >Preço</label
             >
             <input
@@ -388,16 +440,18 @@ onMounted(async () => {
     showCaixaModal.value = true;
   }
 
-  api(`restaurantes/${localStorage.getItem("restaurante_id")}/pratos/`).then((res) => {
-    products.value = res;
-  });
+  api(`restaurantes/${localStorage.getItem("restaurante_id")}/pratos/`).then(
+    (res) => {
+      products.value = res;
+    }
+  );
 
   setInterval(() => {
-    api(`restaurantes/${localStorage.getItem("restaurante_id")}/notificacoes/`).then(
-      (res) => {
-        notifications.value = res.filter((res) => res.visualizada == false);
-      }
-    );
+    api(
+      `restaurantes/${localStorage.getItem("restaurante_id")}/notificacoes/`
+    ).then((res) => {
+      notifications.value = res.filter((res) => res.visualizada == false);
+    });
   }, 5000);
 });
 
@@ -410,6 +464,7 @@ const products = ref([]);
 
 const selectedTable = ref(null);
 const currentOrder = ref([]);
+const pedidoSearch = ref("");
 const productSearch = ref("");
 const showAddProductModal = ref(false);
 const newProduct = ref({ name: "", price: 0 });
@@ -421,15 +476,29 @@ const orderHistory = ref([]);
 const filteredProducts = computed(() => {
   if (!productSearch.value) return products.value;
   const search = productSearch.value.toLowerCase();
-  return products.value.filter((product) => product.nome.toLowerCase().includes(search));
+  return products.value.filter((product) =>
+    product.nome.toLowerCase().includes(search)
+  );
 });
 
 const orderTotal = computed(() => {
   return currentOrder.value.reduce(
-    (total, item) => total + item.valor * item.quantity,
+    (total, item) => total + item.valor * item.qtd,
     0
   );
 });
+
+function buscarPedido() {
+  api(`pedidos/`).then((res) => {
+    console.log(res, "aaaaaaa");
+    const pedido = res.find((i) => i.codigo == pedidoSearch.value);
+    if (pedido) {
+      pedido.items.map((item) => addToOrder(item.prato, item.qtd));
+    } else {
+      alert("Pedido não encontrado");
+    }
+  });
+}
 
 const confirmCaixaSelection = () => {
   if (selectedCaixaId.value) {
@@ -443,29 +512,36 @@ const selectTable = (table) => {
   currentOrder.value = [];
 };
 
-const addToOrder = (product) => {
-  const existingItem = currentOrder.value.find((item) => item.id === product.id);
+const addToOrder = (product, qtd = 1) => {
+  const existingItem = currentOrder.value.find(
+    (item) => item.id === product.id
+  );
   if (existingItem) {
-    existingItem.quantity++;
+    existingItem.qtd++;
   } else {
-    currentOrder.value.push({ ...product, quantity: 1 });
+    currentOrder.value.push({
+      ...product,
+      qtd: qtd,
+    });
   }
 };
 
 const decreaseQuantity = (item) => {
-  if (item.quantity > 1) {
-    item.quantity--;
+  if (item.qtd > 1) {
+    item.qtd--;
   } else {
     removeFromOrder(item);
   }
 };
 
 const increaseQuantity = (item) => {
-  item.quantity++;
+  item.qtd++;
 };
 
 const removeFromOrder = (item) => {
-  const index = currentOrder.value.findIndex((orderItem) => orderItem.id === item.id);
+  const index = currentOrder.value.findIndex(
+    (orderItem) => orderItem.id === item.id
+  );
   if (index !== -1) {
     currentOrder.value.splice(index, 1);
   }
@@ -481,7 +557,7 @@ const submitOrder = () => {
   api("pedidos/", "POST", {
     mesa: selectedTable.value.id,
     items: currentOrder.value.map((item) => {
-      return { id: item.id, qtd: item.quantity };
+      return { id: item.id, qtd: item.qtd };
     }),
     caixa: parseInt(localStorage.getItem("caixa_id")),
   }).then((res) => {
@@ -541,7 +617,9 @@ const getStatusClass = (status) => {
 };
 
 const markAsRead = (id) => {
-  const index = notifications.value.findIndex((notification) => notification.id === id);
+  const index = notifications.value.findIndex(
+    (notification) => notification.id === id
+  );
   if (index !== -1) {
     notifications.value.splice(index, 1);
   }
