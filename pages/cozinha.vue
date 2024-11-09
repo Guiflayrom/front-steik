@@ -76,6 +76,7 @@
           <div class="flex justify-between items-center mb-4">
             <div class="flex items-center space-x-2">
               <h3 class="text-xl font-semibold">Pedido {{ order.codigo }}</h3>
+
               <i
                 :class="[
                   'mdi text-2xl',
@@ -95,6 +96,10 @@
               {{ order.is_delivery ? "Cliente" : "Mesa" }}:
               {{ order.is_delivery ? order.pessoa?.nome || "N/A" : order.mesa }}
             </p>
+            <strong class="text-red-500" v-if="order.observacao">
+              Observação:
+            </strong>
+            {{ order.observacao ?? null }}
             <p v-if="order.is_delivery" class="text-sm text-gray-400">
               Endereço:
               {{

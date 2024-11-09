@@ -711,7 +711,6 @@ const searchOrder = async () => {
         }));
         isSearching.value = true;
       } else {
-        console.log(allOrders.value, "aaa");
         alert("Pedido não encontrado.");
       }
     } catch (error) {
@@ -903,7 +902,6 @@ const showConfirmationModal = () => {
 const finalizeSale = () => {
   showConfirmation.value = false;
   isLoading.value = true;
-
   setTimeout(() => {
     if (orderSearch.value != "" && lastFounded.value != null) {
       api("pedidos/" + lastFounded.value.id + "/", "PATCH", {
@@ -924,8 +922,9 @@ const finalizeSale = () => {
       api("pedidos/", "POST", {
         caixa: localStorage.getItem("caixa_aberto_id"),
         pagamentos: mapPaymentMethods(payments.value),
-        valor_pago: parseFloat(totalPaid.value),
+        valor_pago: totalPaid.value.toFixed(2),
         troco: change.value.toFixed(2),
+        status: "Fechado",
         desconto: totalDiscount.value.toFixed(2),
         subtotal: subtotal.value.toFixed(2),
         items: currentOrder.value.map((item) => {

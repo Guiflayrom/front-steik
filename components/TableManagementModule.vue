@@ -1,7 +1,9 @@
 <template>
   <div class="space-y-6">
     <h2 class="text-3xl font-bold font-display mb-6">Gestão de Mesas</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+    >
       <div
         v-for="table in tables"
         :key="table.id"
@@ -68,14 +70,20 @@
         </h3>
         <div class="space-y-4">
           <div class="bg-gray-700 rounded-lg p-4">
-            <h4 class="text-lg font-semibold mb-2">Transferir pedido para mesa:</h4>
+            <h4 class="text-lg font-semibold mb-2">
+              Transferir pedido para mesa:
+            </h4>
             <div class="max-h-48 overflow-y-auto pr-2">
               <div class="flex items-center space-x-2 mb-2">
                 <select
                   v-model="toTransfer"
                   class="bg-gray-700 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-600 rounded-md"
                 >
-                  <option v-for="table in tables" :key="table.id" :value="table.id">
+                  <option
+                    v-for="table in tables"
+                    :key="table.id"
+                    :value="table.id"
+                  >
                     Mesa {{ table.numero_mesa }}
                   </option>
                 </select>
@@ -254,7 +262,6 @@ const viewTableOrder = (id) => {
   api(
     `restaurantes/${localStorage.getItem("restaurante_id")}/mesas/${id}/pedido-atual/`
   ).then((res) => {
-    console.log(res);
     selectedTable.value = id;
     selectedOrder.value = res;
     showOrderModal.value = true;
@@ -273,17 +280,19 @@ function confirmTransfer() {
       tableFromTransfer.value
     }/pedido-atual/`
   ).then((res) => {
-    api(`pedidos/${res.pedido_id}/`, "PATCH", { mesa: toTransfer.value }).then(() => {
-      showTransferModal.value = false;
+    api(`pedidos/${res.pedido_id}/`, "PATCH", { mesa: toTransfer.value }).then(
+      () => {
+        showTransferModal.value = false;
 
-      api(`mesas/${tableFromTransfer.value}/`, "PATCH", {
-        status: "Disponível",
-      }).then((res) => {
-        api("mesas/").then((res) => {
-          tables.value = res;
+        api(`mesas/${tableFromTransfer.value}/`, "PATCH", {
+          status: "Disponível",
+        }).then((res) => {
+          api("mesas/").then((res) => {
+            tables.value = res;
+          });
         });
-      });
-    });
+      }
+    );
   });
 }
 

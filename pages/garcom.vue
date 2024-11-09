@@ -119,7 +119,7 @@
             <button
               v-for="tab in ['current', 'history']"
               :key="tab"
-              @click="orderTab = tab"
+              @click="changeTab(tab)"
               :class="[
                 'px-4 py-2 rounded-t-lg font-semibold transition duration-300 ease-in-out text-sm md:text-base mr-2',
                 orderTab === tab
@@ -234,6 +234,19 @@
               </ul>
             </div>
 
+            <div class="mb-6">
+              <h4 class="text-base md:text-lg font-semibold mb-2">
+                Observação
+              </h4>
+            </div>
+
+            <textarea
+              v-model="observacao"
+              placeholder="Digite aqui as observações do pedido..."
+              rows="3"
+              class="w-full px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base text-white placeholder-gray-400 mb-4"
+            ></textarea>
+
             <!-- Order Total -->
             <div class="mb-6">
               <h4 class="text-base md:text-lg font-semibold mb-2">
@@ -283,20 +296,24 @@
                   <tr>
                     <th class="text-left py-2 px-4">Código</th>
                     <th class="text-left py-2 px-4">Status</th>
+                    <th class="text-left py-2 px-4">Data</th>
+                    <th class="text-left py-2 px-4">Horário</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr
-                    v-for="order in orderHistory"
-                    :key="order.code"
+                    v-for="order in ordersHistory"
+                    :key="order.codigo"
                     class="border-t border-gray-600"
                   >
-                    <td class="py-2 px-4">{{ order.code }}</td>
+                    <td class="py-2 px-4">{{ order.codigo }}</td>
                     <td class="py-2 px-4">
                       <span :class="getStatusClass(order.status)">
                         {{ order.status }}
                       </span>
                     </td>
+                    <td class="py-2 px-4">{{ order.data_pedido }}</td>
+                    <td class="py-2 px-4">{{ order.horario_pedido }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -418,6 +435,7 @@ import api from "~/api";
 const showCaixaModal = ref(false);
 const selectedCaixaId = ref("");
 const caixas = ref([]);
+const observacao = ref("");
 
 onBeforeMount(() => {
   api("mesas/").then((res) => {
@@ -425,20 +443,38 @@ onBeforeMount(() => {
   });
 
   api("caixas/").then((res) => {
-    caixas.value = res.map((item) => {
-      return { ...item, nome: "Caixa " + item.operador };
-    });
+    caixas.value = res
+      .map((item) => {
+        return { ...item, nome: "Caixa " + item.operador };
+      })
+      .filter((i) => !i.fechado_em);
   });
 });
 
-onMounted(async () => {
-  const storedCaixaId = localStorage.getItem("caixa_id");
-  if (storedCaixaId) {
-    selectedCaixaId.value = storedCaixaId;
-    showCaixaModal.value = false;
-  } else {
-    showCaixaModal.value = true;
+function changeTab(tab) {
+  orderTab.value = tab;
+  if (tab == "history") {
+    getOrderHistory();
   }
+}
+
+const ordersHistory = ref([]);
+
+function getOrderHistory() {
+  api(`mesas/${selectedTable.value.id}/details/`).then((res) => {
+    ordersHistory.value = res.pedidos;
+  });
+  return ordersHistory.value;
+}
+
+onMounted(async () => {
+  // const storedCaixaId = localStorage.getItem("caixa_id");
+  // if (storedCaixaId) {
+  //   selectedCaixaId.value = storedCaixaId;
+  //   showCaixaModal.value = false;
+  // } else {
+  // }
+  showCaixaModal.value = true;
 
   api(`restaurantes/${localStorage.getItem("restaurante_id")}/pratos/`).then(
     (res) => {
@@ -471,8 +507,6 @@ const newProduct = ref({ name: "", price: 0 });
 
 const notifications = ref([]);
 
-const orderHistory = ref([]);
-
 const filteredProducts = computed(() => {
   if (!productSearch.value) return products.value;
   const search = productSearch.value.toLowerCase();
@@ -490,7 +524,6 @@ const orderTotal = computed(() => {
 
 function buscarPedido() {
   api(`pedidos/`).then((res) => {
-    console.log(res, "aaaaaaa");
     const pedido = res.find((i) => i.codigo == pedidoSearch.value);
     if (pedido) {
       pedido.items.map((item) => addToOrder(item.prato, item.qtd));
@@ -510,6 +543,7 @@ const confirmCaixaSelection = () => {
 const selectTable = (table) => {
   selectedTable.value = table;
   currentOrder.value = [];
+  getOrderHistory();
 };
 
 const addToOrder = (product, qtd = 1) => {
@@ -559,9 +593,10 @@ const submitOrder = () => {
     items: currentOrder.value.map((item) => {
       return { id: item.id, qtd: item.qtd };
     }),
+    observacao: observacao.value,
     caixa: parseInt(localStorage.getItem("caixa_id")),
   }).then((res) => {
-    console.log(res);
+    observacao;
   });
 
   // Add a new notification for the submitted order
@@ -574,10 +609,7 @@ const submitOrder = () => {
     time: new Date(),
   });
   // Add the new order to the history
-  orderHistory.value.unshift({
-    code: `P${String(orderHistory.value.length + 1).padStart(3, "0")}`,
-    status: "pendente",
-  });
+
   currentOrder.value = [];
   selectedTable.value = null;
 };
@@ -603,14 +635,17 @@ const formatTime = (date) => {
 const getStatusClass = (status) => {
   const baseClasses = "px-2 py-1 rounded-full text-xs font-semibold";
   switch (status) {
-    case "aviso":
+    case "Em Aberto":
       return `${baseClasses} bg-yellow-500 text-yellow-900`;
-    case "em preparo":
+
+    case "Preparando":
       return `${baseClasses} bg-blue-500 text-blue-900`;
-    case "pronto":
+    case "Pedido Pronto":
       return `${baseClasses} bg-green-500 text-green-900`;
-    case "novo":
+    case "Em Confirmacao":
       return `${baseClasses} bg-purple-500 text-purple-900`;
+    case "Fechado":
+      return `${baseClasses} bg-red-500 text-red-900`;
     default:
       return `${baseClasses} bg-gray-500 text-gray-900`;
   }
