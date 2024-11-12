@@ -503,7 +503,7 @@ const currentOrder = ref([]);
 const pedidoSearch = ref("");
 const productSearch = ref("");
 const showAddProductModal = ref(false);
-const newProduct = ref({ name: "", price: 0 });
+const newProduct = ref({ nome: "", valor: 0 });
 
 const notifications = ref([]);
 
@@ -591,7 +591,7 @@ const submitOrder = () => {
   api("pedidos/", "POST", {
     mesa: selectedTable.value.id,
     items: currentOrder.value.map((item) => {
-      return { id: item.id, qtd: item.qtd };
+      return { id: item.id, qtd: item.qtd, nome: item.nome, valor: item.valor };
     }),
     observacao: observacao.value,
     caixa: parseInt(localStorage.getItem("caixa_id")),
@@ -616,12 +616,28 @@ const submitOrder = () => {
 
 const addNewProduct = () => {
   const newId = Math.max(...products.value.map((p) => p.id)) + 1;
+
   products.value.push({
     id: newId,
-    name: newProduct.value.nome,
-    price: parseFloat(newProduct.value.valor),
+    nome: newProduct.value.nome,
+    valor: parseFloat(newProduct.value.valor),
   });
-  newProduct.value = { name: "", price: 0 };
+  const product = products.value[products.value.length - 1];
+  console.log(product, "llll");
+
+  const existingItem = currentOrder.value.find(
+    (item) => item.id === product.id
+  );
+  if (existingItem) {
+    existingItem.qtd++;
+  } else {
+    currentOrder.value.push({
+      ...product,
+      qtd: 1,
+    });
+  }
+
+  newProduct.value = { nome: "", valor: 0 };
   showAddProductModal.value = false;
 };
 

@@ -80,7 +80,7 @@ const allModules = ref([
   {
     name: "Cardápio",
     description: "Atualize itens, preços e gerencie o cardápio do restaurante.",
-    url: "/cardapio",
+    url: "/cozinha",
     icon: "mdi mdi-book-open-variant",
     iconColor: "text-purple-500",
     buttonColor: "bg-purple-600 hover:bg-purple-700",
@@ -112,6 +112,7 @@ onMounted(() => {
     console.warn("restaurante_id não encontrado no localStorage");
     navigateTo("/login");
   }
+  console.log(allModules.value, "kkkkkkkkk");
 });
 </script>
 
